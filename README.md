@@ -10,13 +10,22 @@ A desktop and mobile UI for [Claude Code](https://docs.anthropic.com/en/docs/cla
 
 <div align="center">
   
-### Desktop View
-![Desktop Interface](public/screenshots/desktop-main.png)
-*Main interface showing project overview and chat*
-
-### Mobile Experience  
-![Mobile Interface](public/screenshots/mobile-chat.png)
-*Responsive mobile design with touch navigation*
+<table>
+<tr>
+<td align="center">
+<h3>Desktop View</h3>
+<img src="public/screenshots/desktop-main.png" alt="Desktop Interface" width="400">
+<br>
+<em>Main interface showing project overview and chat</em>
+</td>
+<td align="center">
+<h3>Mobile Experience</h3>
+<img src="public/screenshots/mobile-chat.png" alt="Mobile Interface" width="250">
+<br>
+<em>Responsive mobile design with touch navigation</em>
+</td>
+</tr>
+</table>
 
 
 
@@ -25,6 +34,8 @@ A desktop and mobile UI for [Claude Code](https://docs.anthropic.com/en/docs/cla
 ## Features
 
 - **Responsive Design** - Works seamlessly across desktop, tablet, and mobile
+- **Interactive Chat Interface** - Built-in chat interface for seamless communication with Claude Code
+- **Integrated Shell Terminal** - Direct access to Claude Code CLI through built-in shell functionality
 - **File Explorer** - Interactive file tree with syntax highlighting and live editing
 - **Session Management** - Resume conversations, manage multiple sessions, and track history
 
@@ -97,6 +108,7 @@ The UI automatically discovers Claude Code projects from `~/.claude/projects/` a
 - **Smart Navigation** - Quick access to recent projects and sessions
 
 #### Chat Interface
+- **Use responsive chat or Claude Code CLI** - You can either use the adapted chat interface or use the shell button to connect to Claude Code CLI. 
 - **Real-time Communication** - Stream responses from Claude with WebSocket connection
 - **Session Management** - Resume previous conversations or start fresh sessions
 - **Message History** - Complete conversation history with timestamps and metadata
