@@ -1,0 +1,162 @@
+const { spawn } = require('child_process');
+
+async function spawnClaude(command, options = {}, ws) {
+  return new Promise(async (resolve, reject) => {
+    const { sessionId, projectPath, cwd, resume, toolsSettings } = options;
+    let capturedSessionId = sessionId; // Track session ID throughout the process
+    let sessionCreatedSent = false; // Track if we've already sent session-created event
+    
+    // Use tools settings passed from frontend, or defaults
+    const settings = toolsSettings || {
+      allowedTools: [],
+      disallowedTools: [],
+      skipPermissions: false
+    };
+    
+    console.log('🔧 Using tools settings:', settings);
+    
+    // Build Claude CLI command - start with basic flags
+    const args = ['--output-format', 'stream-json', '--verbose'];
+    
+    // Add tools settings flags
+    if (settings.skipPermissions) {
+      args.push('--dangerously-skip-permissions');
+      console.log('⚠️  Using --dangerously-skip-permissions');
+    }
+    
+    // Add print flag if we have a command
+    if (command && command.trim()) {
+      args.push('--print');
+    }
+    
+    // Add resume flag if resuming (after --print)
+    if (resume && sessionId) {
+      args.push('--resume', sessionId);
+    }
+    
+    // Add allowed tools
+    if (settings.allowedTools && settings.allowedTools.length > 0) {
+      for (const tool of settings.allowedTools) {
+        args.push('--allowedTools', tool);
+        console.log('✅ Allowing tool:', tool);
+      }
+    }
+    
+    // Add disallowed tools
+    if (settings.disallowedTools && settings.disallowedTools.length > 0) {
+      for (const tool of settings.disallowedTools) {
+        args.push('--disallowedTools', tool);
+        console.log('❌ Disallowing tool:', tool);
+      }
+    }
+    
+    // Add the command as the final argument
+    if (command && command.trim()) {
+      args.push(command);
+    }
+    
+    const workingDir = projectPath || cwd || process.cwd();
+    console.log('Spawning Claude CLI:', 'claude', args.join(' '));
+    console.log('Working directory:', workingDir);
+    console.log('Session info - Input sessionId:', sessionId, 'Resume:', resume);
+    
+    const claudeProcess = spawn('claude', args, {
+      cwd: workingDir,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    
+    // Handle stdout (streaming JSON responses)
+    claudeProcess.stdout.on('data', (data) => {
+      const lines = data.toString().split('\n').filter(line => line.trim());
+      
+      for (const line of lines) {
+        try {
+          const response = JSON.parse(line);
+          
+          // Capture session ID if it's in the response
+          if (response.session_id && !capturedSessionId) {
+            capturedSessionId = response.session_id;
+            console.log('📝 Captured session ID:', capturedSessionId);
+            
+            // Send session-created event only once for new sessions
+            if (!sessionId && !sessionCreatedSent) {
+              sessionCreatedSent = true;
+              ws.send(JSON.stringify({
+                type: 'session-created',
+                sessionId: capturedSessionId
+              }));
+            }
+          }
+          
+          // Send parsed response to WebSocket
+          ws.send(JSON.stringify({
+            type: 'claude-response',
+            data: response
+          }));
+        } catch (parseError) {
+          // If not JSON, send as raw text
+          ws.send(JSON.stringify({
+            type: 'claude-output',
+            data: line
+          }));
+        }
+      }
+    });
+    
+    // Handle stderr
+    claudeProcess.stderr.on('data', (data) => {
+      console.error('Claude CLI stderr:', data.toString());
+      ws.send(JSON.stringify({
+        type: 'claude-error',
+        error: data.toString()
+      }));
+    });
+    
+    // Handle process completion
+    claudeProcess.on('close', (code) => {
+      console.log(`Claude CLI process exited with code ${code}`);
+      
+      ws.send(JSON.stringify({
+        type: 'claude-complete',
+        exitCode: code,
+        isNewSession: !sessionId && !!command // Flag to indicate this was a new session
+      }));
+      
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Claude CLI exited with code ${code}`));
+      }
+    });
+    
+    // Handle process errors
+    claudeProcess.on('error', (error) => {
+      console.error('Claude CLI process error:', error);
+      
+      ws.send(JSON.stringify({
+        type: 'claude-error',
+        error: error.message
+      }));
+      
+      reject(error);
+    });
+    
+    // Handle stdin for interactive mode
+    if (command) {
+      // For --print mode with arguments, we don't need to write to stdin
+      claudeProcess.stdin.end();
+    } else {
+      // For interactive mode, we need to write the command to stdin if provided later
+      // Keep stdin open for interactive session
+      if (command !== undefined) {
+        claudeProcess.stdin.write(command + '\n');
+        claudeProcess.stdin.end();
+      }
+      // If no command provided, stdin stays open for interactive use
+    }
+  });
+}
+
+module.exports = {
+  spawnClaude
+};
