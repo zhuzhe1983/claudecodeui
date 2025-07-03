@@ -24,7 +24,11 @@ import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import MobileNav from './components/MobileNav';
 import ToolsSettings from './components/ToolsSettings';
+import QuickSettingsPanel from './components/QuickSettingsPanel';
+
 import { useWebSocket } from './utils/websocket';
+import { ThemeProvider } from './contexts/ThemeContext';
+
 
 // Main App component with routing
 function AppContent() {
@@ -40,6 +44,15 @@ function AppContent() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showToolsSettings, setShowToolsSettings] = useState(false);
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [autoExpandTools, setAutoExpandTools] = useState(() => {
+    const saved = localStorage.getItem('autoExpandTools');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [showRawParameters, setShowRawParameters] = useState(() => {
+    const saved = localStorage.getItem('showRawParameters');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   // Session Protection System: Track sessions with active conversations to prevent
   // automatic project updates from interrupting ongoing chats. When a user sends
   // a message, the session is marked as "active" and project updates are paused
@@ -455,6 +468,9 @@ function AppContent() {
           onSessionInactive={markSessionAsInactive}
           onReplaceTemporarySession={replaceTemporarySession}
           onNavigateToSession={(sessionId) => navigate(`/session/${sessionId}`)}
+          onShowSettings={() => setShowToolsSettings(true)}
+          autoExpandTools={autoExpandTools}
+          showRawParameters={showRawParameters}
         />
       </div>
 
@@ -466,6 +482,23 @@ function AppContent() {
           isInputFocused={isInputFocused}
         />
       )}
+      
+      {/* Quick Settings Panel */}
+      <QuickSettingsPanel
+        isOpen={showQuickSettings}
+        onToggle={setShowQuickSettings}
+        autoExpandTools={autoExpandTools}
+        onAutoExpandChange={(value) => {
+          setAutoExpandTools(value);
+          localStorage.setItem('autoExpandTools', JSON.stringify(value));
+        }}
+        showRawParameters={showRawParameters}
+        onShowRawParametersChange={(value) => {
+          setShowRawParameters(value);
+          localStorage.setItem('showRawParameters', JSON.stringify(value));
+        }}
+        isMobile={isMobile}
+      />
 
       {/* Tools Settings Modal */}
       <ToolsSettings
@@ -479,12 +512,14 @@ function AppContent() {
 // Root App component with router
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AppContent />} />
-        <Route path="/session/:sessionId" element={<AppContent />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<AppContent />} />
+          <Route path="/session/:sessionId" element={<AppContent />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

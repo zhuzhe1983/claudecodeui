@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(mkdir:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(rg:*)",
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)"
+    ],
+    "deny": []
+  }
+}

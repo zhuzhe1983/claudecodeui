@@ -34,7 +34,10 @@ function MainContent({
   onSessionActive,        // Mark session as active when user sends message
   onSessionInactive,      // Mark session as inactive when conversation completes/aborts  
   onReplaceTemporarySession, // Replace temporary session ID with real session ID from WebSocket
-  onNavigateToSession     // Navigate to a specific session (for Claude CLI session duplication workaround)
+  onNavigateToSession,    // Navigate to a specific session (for Claude CLI session duplication workaround)
+  onShowSettings,         // Show tools settings panel
+  autoExpandTools,        // Auto-expand tool accordions
+  showRawParameters       // Show raw parameters in tool accordions
 }) {
   const [editingFile, setEditingFile] = useState(null);
 
@@ -239,6 +242,10 @@ function MainContent({
             onSessionInactive={onSessionInactive}
             onReplaceTemporarySession={onReplaceTemporarySession}
             onNavigateToSession={onNavigateToSession}
+            onShowSettings={onShowSettings}
+            autoExpandTools={autoExpandTools}
+            showRawParameters={showRawParameters}
+
           />
         </div>
         <div className={`h-full overflow-hidden ${activeTab === 'files' ? 'block' : 'hidden'}`}>
