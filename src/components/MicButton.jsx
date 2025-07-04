@@ -12,7 +12,6 @@ export function MicButton({ onTranscript, className = '' }) {
   const lastTapRef = useRef(0);
   
   // Version indicator to verify updates
-  console.log('MicButton v2.0 loaded');
 
   // Start recording
   const startRecording = async () => {

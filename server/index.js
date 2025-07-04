@@ -822,9 +822,7 @@ async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden =
     
     for (const entry of entries) {
       // Debug: log all entries including hidden files
-      if (entry.name.startsWith('.')) {
-        console.log('📁 Found hidden file/folder:', entry.name, 'at depth:', currentDepth);
-      }
+   
       
       // Skip only heavy build directories
       if (entry.name === 'node_modules' || 
