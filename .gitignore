@@ -3,11 +3,14 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Build outputs
 dist/
+dist-ssr/
 build/
-*.tsbuildinfo
+out/
 
 # Environment variables
 .env
@@ -16,17 +19,7 @@ build/
 .env.test.local
 .env.production.local
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-.nyc_output
-
-# IDE/Editor files
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
@@ -43,9 +36,71 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
 *.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
 
 # Temporary folders
 tmp/
 temp/
+
+# Vite
+.vite/
+
+# Local Netlify folder
+.netlify
+
+# Claude specific
+.claude/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3 

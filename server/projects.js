@@ -21,23 +21,37 @@ async function saveProjectConfig(config) {
 }
 
 // Generate better display name from path
-function generateDisplayName(projectName) {
+async function generateDisplayName(projectName) {
   // Convert "-home-user-projects-myapp" to a readable format
-  let path = projectName.replace(/-/g, '/');
+  let projectPath = projectName.replace(/-/g, '/');
+  
+  // Try to read package.json from the project path
+  try {
+    const packageJsonPath = path.join(projectPath, 'package.json');
+    const packageData = await fs.readFile(packageJsonPath, 'utf8');
+    const packageJson = JSON.parse(packageData);
+    
+    // Return the name from package.json if it exists
+    if (packageJson.name) {
+      return packageJson.name;
+    }
+  } catch (error) {
+    // Fall back to path-based naming if package.json doesn't exist or can't be read
+  }
   
   // If it starts with /, it's an absolute path
-  if (path.startsWith('/')) {
-    const parts = path.split('/').filter(Boolean);
+  if (projectPath.startsWith('/')) {
+    const parts = projectPath.split('/').filter(Boolean);
     if (parts.length > 3) {
       // Show last 2 folders with ellipsis: "...projects/myapp"
       return `.../${parts.slice(-2).join('/')}`;
     } else {
       // Show full path if short: "/home/user"
-      return path;
+      return projectPath;
     }
   }
   
-  return path;
+  return projectPath;
 }
 
 async function getProjects() {
@@ -57,7 +71,7 @@ async function getProjects() {
         
         // Get display name from config or generate one
         const customName = config[entry.name]?.displayName;
-        const autoDisplayName = generateDisplayName(entry.name);
+        const autoDisplayName = await generateDisplayName(entry.name);
         const fullPath = entry.name.replace(/-/g, '/');
         
         const project = {
@@ -96,7 +110,7 @@ async function getProjects() {
       const project = {
         name: projectName,
         path: null, // No physical path yet
-        displayName: projectConfig.displayName || generateDisplayName(projectName),
+        displayName: projectConfig.displayName || await generateDisplayName(projectName),
         fullPath: fullPath,
         isCustomName: !!projectConfig.displayName,
         isManuallyAdded: true,
@@ -451,7 +465,7 @@ async function addProjectManually(projectPath, displayName = null) {
     name: projectName,
     path: null,
     fullPath: absolutePath,
-    displayName: displayName || generateDisplayName(projectName),
+    displayName: displayName || await generateDisplayName(projectName),
     isManuallyAdded: true,
     sessions: []
   };

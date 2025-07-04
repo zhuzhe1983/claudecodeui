@@ -3,9 +3,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
-import { X, Plus, Settings, Shield, AlertTriangle } from 'lucide-react';
+import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 function ToolsSettings({ isOpen, onClose }) {
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [allowedTools, setAllowedTools] = useState([]);
   const [disallowedTools, setDisallowedTools] = useState([]);
   const [newAllowedTool, setNewAllowedTool] = useState('');
@@ -139,6 +141,48 @@ function ToolsSettings({ isOpen, onClose }) {
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-safe-area-inset-bottom">
+            
+            {/* Theme Settings */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                {isDarkMode ? <Moon className="w-5 h-5 text-blue-500" /> : <Sun className="w-5 h-5 text-yellow-500" />}
+                <h3 className="text-lg font-medium text-foreground">
+                  Appearance
+                </h3>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-foreground">
+                      Dark Mode
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Toggle between light and dark themes
+                    </div>
+                  </div>
+                  <button
+                    onClick={toggleDarkMode}
+                    className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                    role="switch"
+                    aria-checked={isDarkMode}
+                    aria-label="Toggle dark mode"
+                  >
+                    <span className="sr-only">Toggle dark mode</span>
+                    <span
+                      className={`${
+                        isDarkMode ? 'translate-x-7' : 'translate-x-1'
+                      } inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-200 flex items-center justify-center`}
+                    >
+                      {isDarkMode ? (
+                        <Moon className="w-3.5 h-3.5 text-gray-700" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5 text-yellow-500" />
+                      )}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
             
             {/* Skip Permissions */}
             <div className="space-y-4">
