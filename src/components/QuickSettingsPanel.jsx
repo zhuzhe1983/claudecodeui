@@ -4,14 +4,14 @@ import {
   ChevronRight, 
   Maximize2, 
   Eye, 
-  EyeOff,
-  Zap,
-  Layout,
-  Terminal,
-  Code2,
   Settings2,
   Moon,
-  Sun
+  Sun,
+  ArrowDown,
+  Mic,
+  Brain,
+  Sparkles,
+  FileText
 } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
 import { useTheme } from '../contexts/ThemeContext';
@@ -23,9 +23,14 @@ const QuickSettingsPanel = ({
   onAutoExpandChange,
   showRawParameters,
   onShowRawParametersChange,
+  autoScrollToBottom,
+  onAutoScrollChange,
   isMobile
 }) => {
   const [localIsOpen, setLocalIsOpen] = useState(isOpen);
+  const [whisperMode, setWhisperMode] = useState(() => {
+    return localStorage.getItem('whisperMode') || 'default';
+  });
   const { isDarkMode } = useTheme();
 
   useEffect(() => {
@@ -44,7 +49,7 @@ const QuickSettingsPanel = ({
       <div
         className={`fixed ${isMobile ? 'bottom-44' : 'top-1/2 -translate-y-1/2'} ${
           localIsOpen ? 'right-64' : 'right-0'
-        } z-40 transition-all duration-300 ease-in-out`}
+        } z-50 transition-all duration-150 ease-out`}
       >
         <button
           onClick={handleToggle}
@@ -61,9 +66,9 @@ const QuickSettingsPanel = ({
 
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl transform transition-transform duration-300 ease-in-out z-30 ${
+        className={`fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl transform transition-transform duration-150 ease-out z-40 ${
           localIsOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        } ${isMobile ? 'h-screen' : ''}`}
       >
         <div className="h-full flex flex-col">
           {/* Header */}
@@ -75,12 +80,12 @@ const QuickSettingsPanel = ({
           </div>
 
           {/* Settings Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-white dark:bg-gray-800">
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-white dark:bg-gray-900 ${isMobile ? 'pb-20' : ''}`}>
             {/* Appearance Settings */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Appearance</h4>
               
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
                 <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
                   {isDarkMode ? <Moon className="h-4 w-4 text-gray-600 dark:text-gray-400" /> : <Sun className="h-4 w-4 text-gray-600 dark:text-gray-400" />}
                   Dark Mode
@@ -93,7 +98,7 @@ const QuickSettingsPanel = ({
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Tool Display</h4>
               
-              <label className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+              <label className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
                 <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
                   <Maximize2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                   Auto-expand tools
@@ -102,11 +107,11 @@ const QuickSettingsPanel = ({
                   type="checkbox"
                   checked={autoExpandTools}
                   onChange={(e) => onAutoExpandChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 accent-blue-600"
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+              <label className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
                 <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
                   <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                   Show raw parameters
@@ -115,60 +120,114 @@ const QuickSettingsPanel = ({
                   type="checkbox"
                   checked={showRawParameters}
                   onChange={(e) => onShowRawParametersChange(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 accent-blue-600"
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
                 />
               </label>
-
-              <button disabled className="w-full flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-left text-gray-500 dark:text-gray-400 transition-colors opacity-60 cursor-not-allowed">
-                <Code2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                Syntax highlighting
-              </button>
             </div>
-
-            {/* Performance Settings */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Performance</h4>
-              
-              <button disabled className="w-full flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-left text-gray-500 dark:text-gray-400 transition-colors opacity-60 cursor-not-allowed">
-                <Zap className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                Stream optimizations
-              </button>
-
-              <button disabled className="w-full flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-left text-gray-500 dark:text-gray-400 transition-colors opacity-60 cursor-not-allowed">
-                <Layout className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                Compact mode
-              </button>
-            </div>
-
             {/* View Options */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">View Options</h4>
               
-              <button disabled className="w-full flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-left text-gray-500 dark:text-gray-400 transition-colors opacity-60 cursor-not-allowed">
-                <Terminal className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                Terminal theme
-              </button>
-
-              <button disabled className="w-full flex items-center gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm text-left text-gray-500 dark:text-gray-400 transition-colors opacity-60 cursor-not-allowed">
-                <EyeOff className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                Hide timestamps
-              </button>
+              <label className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                <span className="flex items-center gap-2 text-sm text-gray-900 dark:text-white">
+                  <ArrowDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  Auto-scroll to bottom
+                </span>
+                <input
+                  type="checkbox"
+                  checked={autoScrollToBottom}
+                  onChange={(e) => onAutoScrollChange(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
+                />
+              </label>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-            <button disabled className="w-full py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-md transition-colors text-sm cursor-not-allowed opacity-60">
-              Advanced Settings
-            </button>
+            {/* Whisper Dictation Settings */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Whisper Dictation</h4>
+              
+              <div className="space-y-2">
+                <label className="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                  <input
+                    type="radio"
+                    name="whisperMode"
+                    value="default"
+                    checked={whisperMode === 'default'}
+                    onChange={() => {
+                      setWhisperMode('default');
+                      localStorage.setItem('whisperMode', 'default');
+                      window.dispatchEvent(new Event('whisperModeChanged'));
+                    }}
+                    className="mt-0.5 h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                      <Mic className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      Default Mode
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Direct transcription of your speech
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                  <input
+                    type="radio"
+                    name="whisperMode"
+                    value="prompt"
+                    checked={whisperMode === 'prompt'}
+                    onChange={() => {
+                      setWhisperMode('prompt');
+                      localStorage.setItem('whisperMode', 'prompt');
+                      window.dispatchEvent(new Event('whisperModeChanged'));
+                    }}
+                    className="mt-0.5 h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                      <Sparkles className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      Prompt Enhancement
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Transform rough ideas into clear, detailed AI prompts
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start p-3 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors border border-transparent hover:border-gray-300 dark:hover:border-gray-600">
+                  <input
+                    type="radio"
+                    name="whisperMode"
+                    value="vibe"
+                    checked={whisperMode === 'vibe' || whisperMode === 'instructions' || whisperMode === 'architect'}
+                    onChange={() => {
+                      setWhisperMode('vibe');
+                      localStorage.setItem('whisperMode', 'vibe');
+                      window.dispatchEvent(new Event('whisperModeChanged'));
+                    }}
+                    className="mt-0.5 h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
+                  />
+                  <div className="ml-3 flex-1">
+                    <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+                      <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      Vibe Mode
+                    </span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Format ideas as clear agent instructions with details
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Backdrop for mobile */}
-      {isMobile && localIsOpen && (
+      {/* Backdrop */}
+      {localIsOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-20"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 transition-opacity duration-150 ease-out"
           onClick={handleToggle}
         />
       )}

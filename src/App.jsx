@@ -53,6 +53,10 @@ function AppContent() {
     const saved = localStorage.getItem('showRawParameters');
     return saved !== null ? JSON.parse(saved) : false;
   });
+  const [autoScrollToBottom, setAutoScrollToBottom] = useState(() => {
+    const saved = localStorage.getItem('autoScrollToBottom');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   // Session Protection System: Track sessions with active conversations to prevent
   // automatic project updates from interrupting ongoing chats. When a user sends
   // a message, the session is marked as "active" and project updates are paused
@@ -217,13 +221,18 @@ function AppContent() {
   // Handle URL-based session loading
   useEffect(() => {
     if (sessionId && projects.length > 0) {
+      // Only switch tabs on initial load, not on every project update
+      const shouldSwitchTab = !selectedSession || selectedSession.id !== sessionId;
       // Find the session across all projects
       for (const project of projects) {
         const session = project.sessions?.find(s => s.id === sessionId);
         if (session) {
           setSelectedProject(project);
           setSelectedSession(session);
-          setActiveTab('chat');
+          // Only switch to chat tab if we're loading a different session
+          if (shouldSwitchTab) {
+            setActiveTab('chat');
+          }
           return;
         }
       }
@@ -245,7 +254,11 @@ function AppContent() {
 
   const handleSessionSelect = (session) => {
     setSelectedSession(session);
-    setActiveTab('chat');
+    // Only switch to chat tab when user explicitly selects a session
+    // This prevents tab switching during automatic updates
+    if (activeTab !== 'git' && activeTab !== 'preview') {
+      setActiveTab('chat');
+    }
     if (isMobile) {
       setSidebarOpen(false);
     }
@@ -482,23 +495,29 @@ function AppContent() {
           isInputFocused={isInputFocused}
         />
       )}
-      
-      {/* Quick Settings Panel */}
-      <QuickSettingsPanel
-        isOpen={showQuickSettings}
-        onToggle={setShowQuickSettings}
-        autoExpandTools={autoExpandTools}
-        onAutoExpandChange={(value) => {
-          setAutoExpandTools(value);
-          localStorage.setItem('autoExpandTools', JSON.stringify(value));
-        }}
-        showRawParameters={showRawParameters}
-        onShowRawParametersChange={(value) => {
-          setShowRawParameters(value);
-          localStorage.setItem('showRawParameters', JSON.stringify(value));
-        }}
-        isMobile={isMobile}
-      />
+      {/* Quick Settings Panel - Only show on chat tab */}
+      {activeTab === 'chat' && (
+        <QuickSettingsPanel
+          isOpen={showQuickSettings}
+          onToggle={setShowQuickSettings}
+          autoExpandTools={autoExpandTools}
+          onAutoExpandChange={(value) => {
+            setAutoExpandTools(value);
+            localStorage.setItem('autoExpandTools', JSON.stringify(value));
+          }}
+          showRawParameters={showRawParameters}
+          onShowRawParametersChange={(value) => {
+            setShowRawParameters(value);
+            localStorage.setItem('showRawParameters', JSON.stringify(value));
+          }}
+          autoScrollToBottom={autoScrollToBottom}
+          onAutoScrollChange={(value) => {
+            setAutoScrollToBottom(value);
+            localStorage.setItem('autoScrollToBottom', JSON.stringify(value));
+          }}
+          isMobile={isMobile}
+        />
+      )}
 
       {/* Tools Settings Modal */}
       <ToolsSettings
