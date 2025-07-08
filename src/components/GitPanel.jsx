@@ -62,7 +62,7 @@ function GitPanel({ selectedProject, isMobile }) {
       
       if (data.error) {
         console.error('Git status error:', data.error);
-        setGitStatus(null);
+        setGitStatus({ error: data.error, details: data.details });
       } else {
         setGitStatus(data);
         setCurrentBranch(data.branch || 'main');
@@ -594,8 +594,8 @@ function GitPanel({ selectedProject, isMobile }) {
         </>
       )}
 
-      {/* File Selection Controls - Only show in changes view */}
-      {activeView === 'changes' && gitStatus && (
+      {/* File Selection Controls - Only show in changes view and when git is working */}
+      {activeView === 'changes' && gitStatus && !gitStatus.error && (
         <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <span className="text-xs text-gray-600 dark:text-gray-400">
             {selectedFiles.size} of {(gitStatus?.modified?.length || 0) + (gitStatus?.added?.length || 0) + (gitStatus?.deleted?.length || 0) + (gitStatus?.untracked?.length || 0)} files selected
@@ -675,6 +675,19 @@ function GitPanel({ selectedProject, isMobile }) {
           {isLoading ? (
             <div className="flex items-center justify-center h-32">
               <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+            </div>
+          ) : gitStatus?.error ? (
+            <div className="flex flex-col items-center justify-center h-48 text-gray-500 dark:text-gray-400 px-6">
+              <GitBranch className="w-16 h-16 mb-4 opacity-30" />
+              <p className="text-lg font-medium mb-2 text-center">{gitStatus.error}</p>
+              {gitStatus.details && (
+                <p className="text-sm text-center leading-relaxed">{gitStatus.details}</p>
+              )}
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
+                  <strong>Tip:</strong> Run <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">git init</code> in your project directory to initialize git source control.
+                </p>
+              </div>
             </div>
           ) : !gitStatus || (!gitStatus.modified?.length && !gitStatus.added?.length && !gitStatus.deleted?.length && !gitStatus.untracked?.length) ? (
             <div className="flex flex-col items-center justify-center h-32 text-gray-500 dark:text-gray-400">
