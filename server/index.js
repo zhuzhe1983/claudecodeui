@@ -691,7 +691,6 @@ app.post('/api/transcribe', async (req, res) => {
         formData.append('language', 'en');
         
         // Make request to OpenAI
-        const fetch = require('node-fetch');
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
           method: 'POST',
           headers: {
