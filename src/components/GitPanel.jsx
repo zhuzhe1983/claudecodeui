@@ -568,11 +568,13 @@ function GitPanel({ selectedProject, isMobile }) {
                     <Sparkles className="w-4 h-4" />
                   )}
                 </button>
-                <MicButton
-                  onTranscript={(transcript) => setCommitMessage(transcript)}
-                  mode="default"
-                  className="p-1.5"
-                />
+                <div style={{ display: 'none' }}>
+                  <MicButton
+                    onTranscript={(transcript) => setCommitMessage(transcript)}
+                    mode="default"
+                    className="p-1.5"
+                  />
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-between mt-2">
