@@ -44,7 +44,11 @@ function Sidebar({
   onProjectDelete,
   isLoading,
   onRefresh,
-  onShowSettings
+  onShowSettings,
+  updateAvailable,
+  latestVersion,
+  currentVersion,
+  onShowVersionModal
 }) {
   const [expandedProjects, setExpandedProjects] = useState(new Set());
   const [editingProject, setEditingProject] = useState(null);
