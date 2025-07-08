@@ -76,7 +76,7 @@ function CodeEditor({ file, onClose, projectPath }) {
         const lineStart = pos;
         const lineEnd = pos + oldLines[i].length;
         builder.add(lineStart, lineEnd, Decoration.line({
-          class: 'diff-removed-light'
+          class: isDarkMode ? 'diff-removed-dark' : 'diff-removed-light'
         }));
         pos += oldLines[i].length + 1;
       }
@@ -171,7 +171,7 @@ function CodeEditor({ file, onClose, projectPath }) {
         });
       }
     }
-  }, [content, file.diffInfo, showDiff]);
+  }, [content, file.diffInfo, showDiff, isDarkMode]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -242,14 +242,26 @@ function CodeEditor({ file, onClose, projectPath }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 md:bg-black/50 md:flex md:items-center md:justify-center">
-        <div className="bg-white w-full h-full md:rounded-lg md:w-auto md:h-auto p-8 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-900">Loading {file.name}...</span>
+      <>
+        <style>
+          {`
+            .code-editor-loading {
+              background-color: ${isDarkMode ? '#111827' : '#ffffff'} !important;
+            }
+            .code-editor-loading:hover {
+              background-color: ${isDarkMode ? '#111827' : '#ffffff'} !important;
+            }
+          `}
+        </style>
+        <div className="fixed inset-0 z-50 md:bg-black/50 md:flex md:items-center md:justify-center">
+          <div className="code-editor-loading w-full h-full md:rounded-lg md:w-auto md:h-auto p-8 flex items-center justify-center">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-gray-900 dark:text-white">Loading {file.name}...</span>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -288,7 +300,7 @@ function CodeEditor({ file, onClose, projectPath }) {
             {file.diffInfo && (
               <button
                 onClick={() => setShowDiff(!showDiff)}
-                className="p-2 md:p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
+                className="p-2 md:p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
                 title={showDiff ? "Hide diff highlighting" : "Show diff highlighting"}
               >
                 {showDiff ? <EyeOff className="w-5 h-5 md:w-4 md:h-4" /> : <Eye className="w-5 h-5 md:w-4 md:h-4" />}
@@ -306,18 +318,18 @@ function CodeEditor({ file, onClose, projectPath }) {
             >
               <span className="text-sm md:text-xs font-mono font-bold">↵</span>
             </button>
-
+            
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 md:p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
-              title="Toggle editor theme"
+              className="p-2 md:p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
+              title="Toggle theme"
             >
               <span className="text-lg md:text-base">{isDarkMode ? '☀️' : '🌙'}</span>
             </button>
             
             <button
               onClick={handleDownload}
-              className="p-2 md:p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
+              className="p-2 md:p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
               title="Download file"
             >
               <Download className="w-5 h-5 md:w-4 md:h-4" />
@@ -349,7 +361,7 @@ function CodeEditor({ file, onClose, projectPath }) {
             
             <button
               onClick={toggleFullscreen}
-              className="hidden md:flex p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 items-center justify-center"
+              className="hidden md:flex p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 items-center justify-center"
               title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -357,7 +369,7 @@ function CodeEditor({ file, onClose, projectPath }) {
             
             <button
               onClick={onClose}
-              className="p-2 md:p-2 text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
+              className="p-2 md:p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
               title="Close"
             >
               <X className="w-6 h-6 md:w-4 md:h-4" />
@@ -399,14 +411,14 @@ function CodeEditor({ file, onClose, projectPath }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <span>Lines: {content.split('\n').length}</span>
             <span>Characters: {content.length}</span>
             <span>Language: {file.name.split('.').pop()?.toUpperCase() || 'Text'}</span>
           </div>
           
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Press Ctrl+S to save • Esc to close
           </div>
         </div>
