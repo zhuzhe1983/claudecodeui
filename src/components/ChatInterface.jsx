@@ -23,6 +23,7 @@ import ClaudeLogo from './ClaudeLogo.jsx';
 
 import ClaudeStatus from './ClaudeStatus';
 import { MicButton } from './MicButton.jsx';
+import { api } from '../utils/api';
 
 // Memoized message component to prevent unnecessary re-renders
 const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFileOpen, onShowSettings, autoExpandTools, showRawParameters }) => {
@@ -949,7 +950,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
     
     setIsLoadingSessionMessages(true);
     try {
-      const response = await fetch(`/api/projects/${projectName}/sessions/${sessionId}/messages`);
+      const response = await api.sessionMessages(projectName, sessionId);
       if (!response.ok) {
         throw new Error('Failed to load session messages');
       }
@@ -1451,7 +1452,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
 
   const fetchProjectFiles = async () => {
     try {
-      const response = await fetch(`/api/projects/${selectedProject.name}/files`);
+      const response = await api.getFiles(selectedProject.name);
       if (response.ok) {
         const files = await response.json();
         // Flatten the file tree to get all file paths

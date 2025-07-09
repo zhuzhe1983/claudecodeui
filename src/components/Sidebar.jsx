@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { FolderOpen, Folder, Plus, MessageSquare, Clock, ChevronDown, ChevronRight, Edit3, Check, X, Trash2, Settings, FolderPlus, RefreshCw, Sparkles, Edit2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ClaudeLogo from './ClaudeLogo';
+import { api } from '../utils/api';
 
 // Move formatTimeAgo outside component to avoid recreation on every render
 const formatTimeAgo = (dateString, currentTime) => {
@@ -132,13 +133,7 @@ function Sidebar({
 
   const saveProjectName = async (projectName) => {
     try {
-      const response = await fetch(`/api/projects/${projectName}/rename`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ displayName: editingName }),
-      });
+      const response = await api.renameProject(projectName, editingName);
 
       if (response.ok) {
         // Refresh projects to get updated data
@@ -164,9 +159,7 @@ function Sidebar({
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectName}/sessions/${sessionId}`, {
-        method: 'DELETE',
-      });
+      const response = await api.deleteSession(projectName, sessionId);
 
       if (response.ok) {
         // Call parent callback if provided
@@ -189,9 +182,7 @@ function Sidebar({
     }
 
     try {
-      const response = await fetch(`/api/projects/${projectName}`, {
-        method: 'DELETE',
-      });
+      const response = await api.deleteProject(projectName);
 
       if (response.ok) {
         // Call parent callback if provided
@@ -218,15 +209,7 @@ function Sidebar({
     setCreatingProject(true);
     
     try {
-      const response = await fetch('/api/projects/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          path: newProjectPath.trim()
-        }),
-      });
+      const response = await api.createProject(newProjectPath.trim());
 
       if (response.ok) {
         const result = await response.json();

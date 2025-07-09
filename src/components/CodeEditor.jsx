@@ -10,6 +10,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, Decoration } from '@codemirror/view';
 import { StateField, StateEffect, RangeSetBuilder } from '@codemirror/state';
 import { X, Save, Download, Maximize2, Minimize2, Eye, EyeOff } from 'lucide-react';
+import { api } from '../utils/api';
 
 function CodeEditor({ file, onClose, projectPath }) {
   const [content, setContent] = useState('');
@@ -139,7 +140,7 @@ function CodeEditor({ file, onClose, projectPath }) {
       try {
         setLoading(true);
         
-        const response = await fetch(`/api/projects/${file.projectName}/file?filePath=${encodeURIComponent(file.path)}`);
+        const response = await api.readFile(file.projectName, file.path);
         
         if (!response.ok) {
           throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
@@ -176,16 +177,7 @@ function CodeEditor({ file, onClose, projectPath }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/projects/${file.projectName}/file`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filePath: file.path,
-          content: content
-        })
-      });
+      const response = await api.saveFile(file.projectName, file.path, content);
 
       if (!response.ok) {
         const errorData = await response.json();
