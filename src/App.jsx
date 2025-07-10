@@ -28,7 +28,10 @@ import QuickSettingsPanel from './components/QuickSettingsPanel';
 
 import { useWebSocket } from './utils/websocket';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import { useVersionCheck } from './hooks/useVersionCheck';
+import { api } from './utils/api';
 
 
 // Main App component with routing
@@ -182,7 +185,7 @@ function AppContent() {
   const fetchProjects = async () => {
     try {
       setIsLoadingProjects(true);
-      const response = await fetch('/api/projects');
+      const response = await api.projects();
       const data = await response.json();
       
       // Optimize to preserve object references when data hasn't changed
@@ -304,7 +307,7 @@ function AppContent() {
   const handleSidebarRefresh = async () => {
     // Refresh only the sessions for all projects, don't change selected state
     try {
-      const response = await fetch('/api/projects');
+      const response = await api.projects();
       const freshProjects = await response.json();
       
       // Optimize to preserve object references and minimize re-renders
@@ -633,12 +636,16 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<AppContent />} />
-          <Route path="/session/:sessionId" element={<AppContent />} />
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <ProtectedRoute>
+          <Router>
+            <Routes>
+              <Route path="/" element={<AppContent />} />
+              <Route path="/session/:sessionId" element={<AppContent />} />
+            </Routes>
+          </Router>
+        </ProtectedRoute>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
