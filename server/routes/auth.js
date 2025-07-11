@@ -1,7 +1,7 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const { userDb } = require('../database/db');
-const { generateToken, authenticateToken } = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcrypt';
+import { userDb } from '../database/db.js';
+import { generateToken, authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ router.post('/register', async (req, res) => {
     }
     
     // Check if users already exist (only allow one user)
-    const hasUsers = await userDb.hasUsers();
+    const hasUsers = userDb.hasUsers();
     if (hasUsers) {
       return res.status(403).json({ error: 'User already exists. This is a single-user system.' });
     }
@@ -44,13 +44,13 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, saltRounds);
     
     // Create user
-    const user = await userDb.createUser(username, passwordHash);
+    const user = userDb.createUser(username, passwordHash);
     
     // Generate token
     const token = generateToken(user);
     
     // Update last login
-    await userDb.updateLastLogin(user.id);
+    userDb.updateLastLogin(user.id);
     
     res.json({
       success: true,
@@ -79,7 +79,7 @@ router.post('/login', async (req, res) => {
     }
     
     // Get user from database
-    const user = await userDb.getUserByUsername(username);
+    const user = userDb.getUserByUsername(username);
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
@@ -94,7 +94,7 @@ router.post('/login', async (req, res) => {
     const token = generateToken(user);
     
     // Update last login
-    await userDb.updateLastLogin(user.id);
+    userDb.updateLastLogin(user.id);
     
     res.json({
       success: true,
@@ -122,4 +122,4 @@ router.post('/logout', authenticateToken, (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
-module.exports = router;
+export default router;

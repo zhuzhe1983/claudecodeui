@@ -1,7 +1,13 @@
 // Load environment variables from .env file
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 try {
-  const fs = require('fs');
-  const path = require('path');
   const envPath = path.join(__dirname, '../.env');
   const envFile = fs.readFileSync(envPath, 'utf8');
   envFile.split('\n').forEach(line => {
@@ -19,31 +25,31 @@ try {
 
 console.log('PORT from env:', process.env.PORT);
 
-const express = require('express');
-const { WebSocketServer } = require('ws');
-const http = require('http');
-const path = require('path');
-const cors = require('cors');
-const fs = require('fs').promises;
-const { spawn } = require('child_process');
-const os = require('os');
-const pty = require('node-pty');
-const fetch = require('node-fetch');
+import express from 'express';
+import { WebSocketServer } from 'ws';
+import http from 'http';
+import cors from 'cors';
+import { promises as fsPromises } from 'fs';
+import { spawn } from 'child_process';
+import os from 'os';
+import pty from 'node-pty';
+import fetch from 'node-fetch';
+import mime from 'mime-types';
 
-const { getProjects, getSessions, getSessionMessages, renameProject, deleteSession, deleteProject, addProjectManually, extractProjectDirectory, clearProjectDirectoryCache } = require('./projects');
-const { spawnClaude, abortClaudeSession } = require('./claude-cli');
-const gitRoutes = require('./routes/git');
-const authRoutes = require('./routes/auth');
-const { initializeDatabase } = require('./database/db');
-const { validateApiKey, authenticateToken, authenticateWebSocket } = require('./middleware/auth');
+import { getProjects, getSessions, getSessionMessages, renameProject, deleteSession, deleteProject, addProjectManually, extractProjectDirectory, clearProjectDirectoryCache } from './projects.js';
+import { spawnClaude, abortClaudeSession } from './claude-cli.js';
+import gitRoutes from './routes/git.js';
+import authRoutes from './routes/auth.js';
+import { initializeDatabase } from './database/db.js';
+import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
 
 // File system watcher for projects folder
 let projectsWatcher = null;
 const connectedClients = new Set();
 
 // Setup file system watcher for Claude projects folder using chokidar
-function setupProjectsWatcher() {
-  const chokidar = require('chokidar');
+async function setupProjectsWatcher() {
+  const chokidar = (await import('chokidar')).default;
   const claudeProjectsPath = path.join(process.env.HOME, '.claude', 'projects');
   
   if (projectsWatcher) {
@@ -283,14 +289,14 @@ app.get('/api/projects/:projectName/file', authenticateToken, async (req, res) =
     
     console.log('📄 File read request:', projectName, filePath);
     
-    const fs = require('fs').promises;
+    // Using fsPromises from import
     
     // Security check - ensure the path is safe and absolute
     if (!filePath || !path.isAbsolute(filePath)) {
       return res.status(400).json({ error: 'Invalid file path' });
     }
     
-    const content = await fs.readFile(filePath, 'utf8');
+    const content = await fsPromises.readFile(filePath, 'utf8');
     res.json({ content, path: filePath });
   } catch (error) {
     console.error('Error reading file:', error);
@@ -312,8 +318,8 @@ app.get('/api/projects/:projectName/files/content', authenticateToken, async (re
     
     console.log('🖼️ Binary file serve request:', projectName, filePath);
     
-    const fs = require('fs');
-    const mime = require('mime-types');
+    // Using fs from import
+    // Using mime from import
     
     // Security check - ensure the path is safe and absolute
     if (!filePath || !path.isAbsolute(filePath)) {
@@ -322,7 +328,7 @@ app.get('/api/projects/:projectName/files/content', authenticateToken, async (re
     
     // Check if file exists
     try {
-      await fs.promises.access(filePath);
+      await fsPromises.access(filePath);
     } catch (error) {
       return res.status(404).json({ error: 'File not found' });
     }
@@ -358,7 +364,7 @@ app.put('/api/projects/:projectName/file', authenticateToken, async (req, res) =
     
     console.log('💾 File save request:', projectName, filePath);
     
-    const fs = require('fs').promises;
+    // Using fsPromises from import
     
     // Security check - ensure the path is safe and absolute
     if (!filePath || !path.isAbsolute(filePath)) {
@@ -372,14 +378,14 @@ app.put('/api/projects/:projectName/file', authenticateToken, async (req, res) =
     // Create backup of original file
     try {
       const backupPath = filePath + '.backup.' + Date.now();
-      await fs.copyFile(filePath, backupPath);
+      await fsPromises.copyFile(filePath, backupPath);
       console.log('📋 Created backup:', backupPath);
     } catch (backupError) {
       console.warn('Could not create backup:', backupError.message);
     }
     
     // Write the new content
-    await fs.writeFile(filePath, content, 'utf8');
+    await fsPromises.writeFile(filePath, content, 'utf8');
     
     res.json({ 
       success: true, 
@@ -401,7 +407,7 @@ app.put('/api/projects/:projectName/file', authenticateToken, async (req, res) =
 app.get('/api/projects/:projectName/files', authenticateToken, async (req, res) => {
   try {
     
-    const fs = require('fs').promises;
+    // Using fsPromises from import
     
     // Use extractProjectDirectory to get the actual project path
     let actualPath;
@@ -415,7 +421,7 @@ app.get('/api/projects/:projectName/files', authenticateToken, async (req, res) 
     
     // Check if path exists
     try {
-      await fs.access(actualPath);
+      await fsPromises.access(actualPath);
     } catch (e) {
       return res.status(404).json({ error: `Project path not found: ${actualPath}` });
     }
@@ -662,7 +668,7 @@ function handleShellConnection(ws) {
 // Audio transcription endpoint
 app.post('/api/transcribe', authenticateToken, async (req, res) => {
   try {
-    const multer = require('multer');
+    const multer = (await import('multer')).default;
     const upload = multer({ storage: multer.memoryStorage() });
     
     // Handle multipart form data
@@ -682,7 +688,7 @@ app.post('/api/transcribe', authenticateToken, async (req, res) => {
       
       try {
         // Create form data for OpenAI
-        const FormData = require('form-data');
+        const FormData = (await import('form-data')).default;
         const formData = new FormData();
         formData.append('file', req.file.buffer, {
           filename: req.file.originalname,
@@ -725,7 +731,7 @@ app.post('/api/transcribe', authenticateToken, async (req, res) => {
         
         // Handle different enhancement modes
         try {
-          const OpenAI = require('openai');
+          const OpenAI = (await import('openai')).default;
           const openai = new OpenAI({ apiKey });
           
           let prompt, systemMessage, temperature = 0.7, maxTokens = 800;
@@ -815,11 +821,11 @@ app.get('*', (req, res) => {
 });
 
 async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden = true) {
-  const fs = require('fs').promises;
+  // Using fsPromises from import
   const items = [];
   
   try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const entries = await fsPromises.readdir(dirPath, { withFileTypes: true });
     
     for (const entry of entries) {
       // Debug: log all entries including hidden files
@@ -840,7 +846,7 @@ async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden =
         // Recursively get subdirectories but limit depth
         try {
           // Check if we can access the directory before trying to read it
-          await fs.access(item.path, fs.constants.R_OK);
+          await fsPromises.access(item.path, fs.constants.R_OK);
           item.children = await getFileTree(item.path, maxDepth, currentDepth + 1, showHidden);
         } catch (e) {
           // Silently skip directories we can't access (permission denied, etc.)
@@ -872,13 +878,13 @@ async function startServer() {
   try {
     // Initialize authentication database
     await initializeDatabase();
-    console.log('✅ Database initialized successfully');
+    console.log('✅ Database initialization skipped (testing)');
     
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', async () => {
       console.log(`Claude Code UI server running on http://0.0.0.0:${PORT}`);
       
       // Start watching the projects folder for changes
-      setupProjectsWatcher();
+      await setupProjectsWatcher(); // Re-enabled with better-sqlite3
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

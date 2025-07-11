@@ -66,9 +66,13 @@ function Sidebar({
   const [editingSessionName, setEditingSessionName] = useState('');
   const [generatingSummary, setGeneratingSummary] = useState({});
 
-  // Touch handler to prevent double-tap issues on iPad
+  // Touch handler to prevent double-tap issues on iPad (only for buttons, not scroll areas)
   const handleTouchClick = (callback) => {
     return (e) => {
+      // Only prevent default for buttons/clickable elements, not scrollable areas
+      if (e.target.closest('.overflow-y-auto') || e.target.closest('[data-scroll-container]')) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       callback();
