@@ -903,6 +903,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
   const [sessionMessages, setSessionMessages] = useState([]);
   const [isLoadingSessionMessages, setIsLoadingSessionMessages] = useState(false);
   const [isSystemSessionChange, setIsSystemSessionChange] = useState(false);
+  const [permissionMode, setPermissionMode] = useState('default');
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -1681,7 +1682,8 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         cwd: selectedProject.fullPath,
         sessionId: currentSessionId,
         resume: !!currentSessionId,
-        toolsSettings: toolsSettings
+        toolsSettings: toolsSettings,
+        permissionMode: permissionMode
       }
     });
 
@@ -1724,6 +1726,16 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         setShowFileDropdown(false);
         return;
       }
+    }
+    
+    // Handle Tab key for mode switching (only when file dropdown is not showing)
+    if (e.key === 'Tab' && !showFileDropdown) {
+      e.preventDefault();
+      const modes = ['default', 'acceptEdits', 'bypassPermissions', 'plan'];
+      const currentIndex = modes.indexOf(permissionMode);
+      const nextIndex = (currentIndex + 1) % modes.length;
+      setPermissionMode(modes[nextIndex]);
+      return;
     }
     
     // Handle Enter key: Ctrl+Enter (Cmd+Enter on Mac) sends, Shift+Enter creates new line
@@ -1788,6 +1800,13 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         sessionId: currentSessionId
       });
     }
+  };
+
+  const handleModeSwitch = () => {
+    const modes = ['default', 'acceptEdits', 'bypassPermissions', 'plan'];
+    const currentIndex = modes.indexOf(permissionMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setPermissionMode(modes[nextIndex]);
   };
 
   // Don't render if no project is selected
@@ -1888,18 +1907,6 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Floating scroll to bottom button - positioned outside scrollable container */}
-      {isUserScrolledUp && chatMessages.length > 0 && (
-        <button
-          onClick={scrollToBottom}
-          className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:ring-offset-gray-800 z-50"
-          title="Scroll to bottom"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </button>
-      )}
 
       {/* Input Area - Fixed Bottom */}
       <div className={`p-2 sm:p-4 md:p-6 flex-shrink-0 ${
@@ -1911,6 +1918,57 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
           isLoading={isLoading}
           onAbort={handleAbortSession}
         />
+        
+        {/* Permission Mode Selector with scroll to bottom button - Above input, clickable for mobile */}
+        <div className="max-w-4xl mx-auto mb-3">
+          <div className="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={handleModeSwitch}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                permissionMode === 'default' 
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  : permissionMode === 'acceptEdits'
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-300 dark:border-green-600 hover:bg-green-100 dark:hover:bg-green-900/30'
+                  : permissionMode === 'bypassPermissions'
+                  ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                  : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+              }`}
+              title="Click to change permission mode (or press Tab in input)"
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  permissionMode === 'default' 
+                    ? 'bg-gray-500'
+                    : permissionMode === 'acceptEdits'
+                    ? 'bg-green-500'
+                    : permissionMode === 'bypassPermissions'
+                    ? 'bg-orange-500'
+                    : 'bg-blue-500'
+                }`} />
+                <span>
+                  {permissionMode === 'default' && 'Default Mode'}
+                  {permissionMode === 'acceptEdits' && 'Accept Edits'}
+                  {permissionMode === 'bypassPermissions' && 'Bypass Permissions'}
+                  {permissionMode === 'plan' && 'Plan Mode'}
+                </span>
+              </div>
+            </button>
+            
+            {/* Scroll to bottom button - positioned next to mode indicator */}
+            {isUserScrolledUp && chatMessages.length > 0 && (
+              <button
+                onClick={scrollToBottom}
+                className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:ring-offset-gray-800"
+                title="Scroll to bottom"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
         
         <form onSubmit={handleSubmit} className="relative max-w-4xl mx-auto">
           <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 dark:focus-within:ring-blue-500 focus-within:border-blue-500 transition-all duration-200 ${isTextareaExpanded ? 'chat-input-expanded' : ''}`}>
@@ -2041,12 +2099,12 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
           </div>
           {/* Hint text */}
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2 hidden sm:block">
-            Press Enter to send • Shift+Enter for new line • @ to reference files
+            Press Enter to send • Shift+Enter for new line • Tab to change modes • @ to reference files
           </div>
           <div className={`text-xs text-gray-500 dark:text-gray-400 text-center mt-2 sm:hidden transition-opacity duration-200 ${
             isInputFocused ? 'opacity-100' : 'opacity-0'
           }`}>
-            Enter to send • @ for files
+            Enter to send • Tab for modes • @ for files
           </div>
         </form>
       </div>

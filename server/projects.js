@@ -1,6 +1,7 @@
-const fs = require('fs').promises;
-const path = require('path');
-const readline = require('readline');
+import { promises as fs } from 'fs';
+import fsSync from 'fs';
+import path from 'path';
+import readline from 'readline';
 
 // Cache for extracted project directories
 const projectDirectoryCache = new Map();
@@ -91,7 +92,7 @@ async function extractProjectDirectory(projectName) {
       // Process all JSONL files to collect cwd values
       for (const file of jsonlFiles) {
         const jsonlFile = path.join(projectDir, file);
-        const fileStream = require('fs').createReadStream(jsonlFile);
+        const fileStream = fsSync.createReadStream(jsonlFile);
         const rl = readline.createInterface({
           input: fileStream,
           crlfDelay: Infinity
@@ -325,7 +326,7 @@ async function parseJsonlSessions(filePath) {
   const sessions = new Map();
   
   try {
-    const fileStream = require('fs').createReadStream(filePath);
+    const fileStream = fsSync.createReadStream(filePath);
     const rl = readline.createInterface({
       input: fileStream,
       crlfDelay: Infinity
@@ -409,7 +410,7 @@ async function getSessionMessages(projectName, sessionId) {
     // Process all JSONL files to find messages for this session
     for (const file of jsonlFiles) {
       const jsonlFile = path.join(projectDir, file);
-      const fileStream = require('fs').createReadStream(jsonlFile);
+      const fileStream = fsSync.createReadStream(jsonlFile);
       const rl = readline.createInterface({
         input: fileStream,
         crlfDelay: Infinity
@@ -601,7 +602,7 @@ async function addProjectManually(projectPath, displayName = null) {
 }
 
 
-module.exports = {
+export {
   getProjects,
   getSessions,
   getSessionMessages,

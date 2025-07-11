@@ -1,9 +1,9 @@
-const express = require('express');
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const path = require('path');
-const fs = require('fs').promises;
-const { extractProjectDirectory } = require('../projects');
+import express from 'express';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import path from 'path';
+import { promises as fs } from 'fs';
+import { extractProjectDirectory } from '../projects.js';
 
 const router = express.Router();
 const execAsync = promisify(exec);
@@ -420,4 +420,4 @@ function generateSimpleCommitMessage(files, diff) {
   }
 }
 
-module.exports = router;
+export default router;

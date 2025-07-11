@@ -1,10 +1,10 @@
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 let activeClaudeProcesses = new Map(); // Track active processes by session ID
 
 async function spawnClaude(command, options = {}, ws) {
   return new Promise(async (resolve, reject) => {
-    const { sessionId, projectPath, cwd, resume, toolsSettings } = options;
+    const { sessionId, projectPath, cwd, resume, toolsSettings, permissionMode } = options;
     let capturedSessionId = sessionId; // Track session ID throughout the process
     let sessionCreatedSent = false; // Track if we've already sent session-created event
     
@@ -36,15 +36,38 @@ async function spawnClaude(command, options = {}, ws) {
       args.push('--model', 'sonnet');
     }
     
+    // Add permission mode if specified (works for both new and resumed sessions)
+    if (permissionMode && permissionMode !== 'default') {
+      args.push('--permission-mode', permissionMode);
+      console.log('🔒 Using permission mode:', permissionMode);
+    }
+    
     // Add tools settings flags
-    if (settings.skipPermissions) {
+    // Don't use --dangerously-skip-permissions when in plan mode
+    if (settings.skipPermissions && permissionMode !== 'plan') {
       args.push('--dangerously-skip-permissions');
       console.log('⚠️  Using --dangerously-skip-permissions (skipping other tool settings)');
     } else {
       // Only add allowed/disallowed tools if not skipping permissions
+      
+      // Collect all allowed tools, including plan mode defaults
+      let allowedTools = [...(settings.allowedTools || [])];
+      
+      // Add plan mode specific tools
+      if (permissionMode === 'plan') {
+        const planModeTools = ['Read', 'Task', 'exit_plan_mode', 'TodoRead', 'TodoWrite'];
+        // Add plan mode tools that aren't already in the allowed list
+        for (const tool of planModeTools) {
+          if (!allowedTools.includes(tool)) {
+            allowedTools.push(tool);
+          }
+        }
+        console.log('📝 Plan mode: Added default allowed tools:', planModeTools);
+      }
+      
       // Add allowed tools
-      if (settings.allowedTools && settings.allowedTools.length > 0) {
-        for (const tool of settings.allowedTools) {
+      if (allowedTools.length > 0) {
+        for (const tool of allowedTools) {
           args.push('--allowedTools', tool);
           console.log('✅ Allowing tool:', tool);
         }
@@ -56,6 +79,11 @@ async function spawnClaude(command, options = {}, ws) {
           args.push('--disallowedTools', tool);
           console.log('❌ Disallowing tool:', tool);
         }
+      }
+      
+      // Log when skip permissions is disabled due to plan mode
+      if (settings.skipPermissions && permissionMode === 'plan') {
+        console.log('📝 Skip permissions disabled due to plan mode');
       }
     }
     
@@ -201,7 +229,7 @@ function abortClaudeSession(sessionId) {
   return false;
 }
 
-module.exports = {
+export {
   spawnClaude,
   abortClaudeSession
 };

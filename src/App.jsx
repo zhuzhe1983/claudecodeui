@@ -585,6 +585,7 @@ function AppContent() {
           onShowSettings={() => setShowToolsSettings(true)}
           autoExpandTools={autoExpandTools}
           showRawParameters={showRawParameters}
+          autoScrollToBottom={autoScrollToBottom}
         />
       </div>
 
