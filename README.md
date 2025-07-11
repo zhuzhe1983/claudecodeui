@@ -44,7 +44,7 @@ A desktop and mobile UI for [Claude Code](https://docs.anthropic.com/en/docs/cla
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v16 or higher
+- [Node.js](https://nodejs.org/) v20 or higher
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and configured
 
 ### Installation
