@@ -451,6 +451,32 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                     }
                   }
                   
+                  // Special handling for exit_plan_mode tool
+                  if (message.toolName === 'exit_plan_mode') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.plan) {
+                        // Replace escaped newlines with actual newlines
+                        const planContent = input.plan.replace(/\\n/g, '\n');
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              📋 View implementation plan
+                            </summary>
+                            <div className="mt-3 prose prose-sm max-w-none dark:prose-invert">
+                              <ReactMarkdown>{planContent}</ReactMarkdown>
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      // Fall back to regular display
+                    }
+                  }
+                  
                   // Regular tool input display for other tools
                   return (
                     <details className="mt-2" open={autoExpandTools}>
@@ -529,6 +555,30 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                                     <span className="font-medium">Current Todo List</span>
                                   </div>
                                   <TodoList todos={todos} isResult={true} />
+                                </div>
+                              );
+                            }
+                          } catch (e) {
+                            // Fall through to regular handling
+                          }
+                        }
+
+                        // Special handling for exit_plan_mode tool results
+                        if (message.toolName === 'exit_plan_mode') {
+                          try {
+                            // The content should be JSON with a "plan" field
+                            const parsed = JSON.parse(content);
+                            if (parsed.plan) {
+                              // Replace escaped newlines with actual newlines
+                              const planContent = parsed.plan.replace(/\\n/g, '\n');
+                              return (
+                                <div>
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <span className="font-medium">Implementation Plan</span>
+                                  </div>
+                                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                                    <ReactMarkdown>{planContent}</ReactMarkdown>
+                                  </div>
                                 </div>
                               );
                             }
