@@ -353,8 +353,10 @@ function Sidebar({
       // Sort by most recent activity (descending)
       return getProjectLastActivity(b) - getProjectLastActivity(a);
     } else {
-      // Sort by name (ascending)
-      return a.name.localeCompare(b.name);
+      // Sort by display name (user-defined) or fallback to name (ascending)
+      const nameA = a.displayName || a.name;
+      const nameB = b.displayName || b.name;
+      return nameA.localeCompare(nameB);
     }
   });
 

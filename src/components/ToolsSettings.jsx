@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
-import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun, FolderOpen, SortAsc } from 'lucide-react';
+import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 function ToolsSettings({ isOpen, onClose }) {
@@ -186,6 +186,28 @@ function ToolsSettings({ isOpen, onClose }) {
                     </span>
                   </button>
                 </div>
+                
+                {/* Project Sorting - Moved under Appearance */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-foreground">
+                        Project Sorting
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        How projects are ordered in the sidebar
+                      </div>
+                    </div>
+                    <select
+                      value={projectSortOrder}
+                      onChange={(e) => setProjectSortOrder(e.target.value)}
+                      className="text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2"
+                    >
+                      <option value="name">Alphabetical</option>
+                      <option value="date">Recent Activity</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -214,56 +236,6 @@ function ToolsSettings({ isOpen, onClose }) {
                     </div>
                   </div>
                 </label>
-              </div>
-            </div>
-
-            {/* Project Sorting */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <FolderOpen className="w-5 h-5 text-purple-500" />
-                <h3 className="text-lg font-medium text-foreground">
-                  Project Sorting
-                </h3>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                <div className="space-y-3">
-                  <div className="text-sm text-muted-foreground mb-3">
-                    Choose how projects are sorted in the sidebar
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setProjectSortOrder('name')}
-                      className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
-                        projectSortOrder === 'name'
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <SortAsc className="w-4 h-4" />
-                        <span>Sort by Name</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setProjectSortOrder('date')}
-                      className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
-                        projectSortOrder === 'date'
-                          ? 'bg-purple-600 text-white border-purple-600'
-                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <SortAsc className="w-4 h-4 rotate-180" />
-                        <span>Sort by Date</span>
-                      </div>
-                    </button>
-                  </div>
-                  <div className="text-xs text-purple-700 dark:text-purple-300 mt-2">
-                    {projectSortOrder === 'name' 
-                      ? 'Projects are sorted alphabetically by name'
-                      : 'Projects are sorted by most recent session activity'}
-                  </div>
-                </div>
               </div>
             </div>
 
