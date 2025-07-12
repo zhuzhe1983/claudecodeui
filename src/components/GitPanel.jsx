@@ -473,7 +473,7 @@ function GitPanel({ selectedProject, isMobile }) {
             onClick={() => toggleFileExpanded(filePath)}
           >
             <div className={`p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded ${isMobile ? 'mr-1' : 'mr-2'}`}>
-              {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              <ChevronRight className={`w-3 h-3 transition-transform duration-200 ease-in-out ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
             </div>
             <span className={`flex-1 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>{filePath}</span>
             <span 
@@ -489,10 +489,10 @@ function GitPanel({ selectedProject, isMobile }) {
             </span>
           </div>
         </div>
-        <div className={`bg-gray-50 dark:bg-gray-900 transition-all duration-300 ease-in-out overflow-hidden ${
+        <div className={`bg-gray-50 dark:bg-gray-900 transition-all duration-400 ease-in-out overflow-hidden ${
           isExpanded && diff 
-            ? 'max-h-[600px] opacity-100' 
-            : 'max-h-0 opacity-0'
+            ? 'max-h-[600px] opacity-100 translate-y-0' 
+            : 'max-h-0 opacity-0 -translate-y-1'
         }`}>
             {/* Operation header */}
             <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
@@ -525,10 +525,9 @@ function GitPanel({ selectedProject, isMobile }) {
               )}
             </div>
             <div className="max-h-96 overflow-y-auto p-2">
-              {diff.split('\n').map((line, index) => renderDiffLine(line, index))}
+              {diff && diff.split('\n').map((line, index) => renderDiffLine(line, index))}
             </div>
-          </div>
-        )}
+        </div>
       </div>
     );
   };
