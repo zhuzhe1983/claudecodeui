@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles } from 'lucide-react';
+import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles, Download } from 'lucide-react';
 import { MicButton } from './MicButton.jsx';
 import { authenticatedFetch } from '../utils/api';
 
@@ -24,6 +24,10 @@ function GitPanel({ selectedProject, isMobile }) {
   const [expandedCommits, setExpandedCommits] = useState(new Set());
   const [commitDiffs, setCommitDiffs] = useState({});
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
+  const [remoteStatus, setRemoteStatus] = useState(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isCommitAreaCollapsed, setIsCommitAreaCollapsed] = useState(isMobile); // Collapsed by default on mobile
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -31,6 +35,7 @@ function GitPanel({ selectedProject, isMobile }) {
     if (selectedProject) {
       fetchGitStatus();
       fetchBranches();
+      fetchRemoteStatus();
       if (activeView === 'history') {
         fetchRecentCommits();
       }
@@ -105,6 +110,24 @@ function GitPanel({ selectedProject, isMobile }) {
     }
   };
 
+  const fetchRemoteStatus = async () => {
+    if (!selectedProject) return;
+    
+    try {
+      const response = await authenticatedFetch(`/api/git/remote-status?project=${encodeURIComponent(selectedProject.name)}`);
+      const data = await response.json();
+      
+      if (!data.error) {
+        setRemoteStatus(data);
+      } else {
+        setRemoteStatus(null);
+      }
+    } catch (error) {
+      console.error('Error fetching remote status:', error);
+      setRemoteStatus(null);
+    }
+  };
+
   const switchBranch = async (branchName) => {
     try {
       const response = await authenticatedFetch('/api/git/checkout', {
@@ -158,6 +181,59 @@ function GitPanel({ selectedProject, isMobile }) {
       console.error('Error creating branch:', error);
     } finally {
       setIsCreatingBranch(false);
+    }
+  };
+
+  const handleFetch = async () => {
+    setIsFetching(true);
+    try {
+      const response = await authenticatedFetch('/api/git/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: selectedProject.name
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Refresh status after successful fetch
+        fetchGitStatus();
+        fetchRemoteStatus();
+      } else {
+        console.error('Fetch failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching from remote:', error);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handlePull = async () => {
+    setIsPulling(true);
+    try {
+      const response = await authenticatedFetch('/api/git/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: selectedProject.name
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Refresh status after successful pull
+        fetchGitStatus();
+        fetchRemoteStatus();
+      } else {
+        console.error('Pull failed:', data.error);
+        // TODO: Show user-friendly error message
+      }
+    } catch (error) {
+      console.error('Error pulling from remote:', error);
+    } finally {
+      setIsPulling(false);
     }
   };
 
@@ -384,22 +460,22 @@ function GitPanel({ selectedProject, isMobile }) {
     
     return (
       <div key={filePath} className="border-b border-gray-200 dark:border-gray-700 last:border-0">
-        <div className="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+        <div className={`flex items-center hover:bg-gray-50 dark:hover:bg-gray-800 ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'}`}>
           <input
             type="checkbox"
             checked={isSelected}
             onChange={() => toggleFileSelected(filePath)}
             onClick={(e) => e.stopPropagation()}
-            className="mr-2 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600"
+            className={`rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-800 dark:checked:bg-blue-600 ${isMobile ? 'mr-1.5' : 'mr-2'}`}
           />
           <div 
             className="flex items-center flex-1 cursor-pointer"
             onClick={() => toggleFileExpanded(filePath)}
           >
-            <div className="mr-2 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+            <div className={`p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded ${isMobile ? 'mr-1' : 'mr-2'}`}>
               {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </div>
-            <span className="flex-1 text-sm truncate">{filePath}</span>
+            <span className={`flex-1 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>{filePath}</span>
             <span 
               className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold border ${
                 status === 'M' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' :
@@ -413,10 +489,29 @@ function GitPanel({ selectedProject, isMobile }) {
             </span>
           </div>
         </div>
-        {isExpanded && diff && (
-          <div className="bg-gray-50 dark:bg-gray-900">
-            {isMobile && (
-              <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-700">
+        <div className={`bg-gray-50 dark:bg-gray-900 transition-all duration-300 ease-in-out overflow-hidden ${
+          isExpanded && diff 
+            ? 'max-h-[600px] opacity-100' 
+            : 'max-h-0 opacity-0'
+        }`}>
+            {/* Operation header */}
+            <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <span 
+                  className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold border ${
+                    status === 'M' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' :
+                    status === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-800' :
+                    status === 'D' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800' :
+                    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600'
+                  }`}
+                >
+                  {status}
+                </span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {getStatusLabel(status)}
+                </span>
+              </div>
+              {isMobile && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -427,8 +522,8 @@ function GitPanel({ selectedProject, isMobile }) {
                 >
                   {wrapText ? '↔️ Scroll' : '↩️ Wrap'}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
             <div className="max-h-96 overflow-y-auto p-2">
               {diff.split('\n').map((line, index) => renderDiffLine(line, index))}
             </div>
@@ -449,14 +544,36 @@ function GitPanel({ selectedProject, isMobile }) {
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+      <div className={`flex items-center justify-between border-b border-gray-200 dark:border-gray-700 ${isMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowBranchDropdown(!showBranchDropdown)}
-            className="flex items-center space-x-2 px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+            className={`flex items-center hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors ${isMobile ? 'space-x-1 px-2 py-1' : 'space-x-2 px-3 py-1.5'}`}
           >
-            <GitBranch className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-medium">{currentBranch}</span>
+            <GitBranch className={`text-gray-600 dark:text-gray-400 ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+            <div className="flex items-center gap-1">
+              <span className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>{currentBranch}</span>
+              {/* Remote status indicators */}
+              {remoteStatus?.hasRemote && (
+                <div className="flex items-center gap-1 text-xs">
+                  {remoteStatus.ahead > 0 && (
+                    <span className="text-green-600 dark:text-green-400" title={`${remoteStatus.ahead} commit${remoteStatus.ahead !== 1 ? 's' : ''} ahead`}>
+                      ↑{remoteStatus.ahead}
+                    </span>
+                  )}
+                  {remoteStatus.behind > 0 && (
+                    <span className="text-blue-600 dark:text-blue-400" title={`${remoteStatus.behind} commit${remoteStatus.behind !== 1 ? 's' : ''} behind`}>
+                      ↓{remoteStatus.behind}
+                    </span>
+                  )}
+                  {remoteStatus.isUpToDate && (
+                    <span className="text-gray-500 dark:text-gray-400" title="Up to date with remote">
+                      ✓
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform ${showBranchDropdown ? 'rotate-180' : ''}`} />
           </button>
           
@@ -495,16 +612,50 @@ function GitPanel({ selectedProject, isMobile }) {
           )}
         </div>
         
-        <button
-          onClick={() => {
-            fetchGitStatus();
-            fetchBranches();
-          }}
-          disabled={isLoading}
-          className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'}`}>
+          {/* Remote action buttons - smart logic based on ahead/behind status */}
+          {remoteStatus?.hasRemote && !remoteStatus?.isUpToDate && (
+            <>
+              {/* Pull button - show when behind (primary action) */}
+              {remoteStatus.behind > 0 && (
+                <button
+                  onClick={handlePull}
+                  disabled={isPulling}
+                  className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                  title={`Pull ${remoteStatus.behind} commit${remoteStatus.behind !== 1 ? 's' : ''} from ${remoteStatus.remoteName}`}
+                >
+                  <Download className={`w-3 h-3 ${isPulling ? 'animate-pulse' : ''}`} />
+                  <span>{isPulling ? 'Pulling...' : `Pull ${remoteStatus.behind}`}</span>
+                </button>
+              )}
+              
+              {/* Fetch button - show when ahead only or when diverged (secondary action) */}
+              {(remoteStatus.ahead > 0 || (remoteStatus.behind > 0 && remoteStatus.ahead > 0)) && (
+                <button
+                  onClick={handleFetch}
+                  disabled={isFetching}
+                  className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+                  title={`Fetch from ${remoteStatus.remoteName}`}
+                >
+                  <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
+                  <span>{isFetching ? 'Fetching...' : 'Fetch'}</span>
+                </button>
+              )}
+            </>
+          )}
+          
+          <button
+            onClick={() => {
+              fetchGitStatus();
+              fetchBranches();
+              fetchRemoteStatus();
+            }}
+            disabled={isLoading}
+            className={`hover:bg-gray-100 dark:hover:bg-gray-800 rounded ${isMobile ? 'p-1' : 'p-1.5'}`}
+          >
+            <RefreshCw className={`${isLoading ? 'animate-spin' : ''} ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+          </button>
+        </div>
       </div>
 
       {/* Git Repository Not Found Message */}
@@ -523,8 +674,12 @@ function GitPanel({ selectedProject, isMobile }) {
         </div>
       ) : (
         <>
-          {/* Tab Navigation - Only show when git is available */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
+          {/* Tab Navigation - Only show when git is available and no files expanded */}
+          <div className={`flex border-b border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${
+            expandedFiles.size === 0 
+              ? 'max-h-16 opacity-100 translate-y-0' 
+              : 'max-h-0 opacity-0 -translate-y-2 overflow-hidden'
+          }`}>
             <button
               onClick={() => setActiveView('changes')}
               className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
@@ -556,68 +711,107 @@ function GitPanel({ selectedProject, isMobile }) {
           {/* Changes View */}
           {activeView === 'changes' && (
             <>
-              {/* Commit Message Input */}
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                <div className="relative">
-                  <textarea
-                    ref={textareaRef}
-                    value={commitMessage}
-                    onChange={(e) => setCommitMessage(e.target.value)}
-                    placeholder="Message (Ctrl+Enter to commit)"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 resize-none pr-20"
-                    rows="3"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                        handleCommit();
-                      }
-                    }}
-                  />
-                  <div className="absolute right-2 top-2 flex gap-1">
-                    <button
-                      onClick={generateCommitMessage}
-                      disabled={selectedFiles.size === 0 || isGeneratingMessage}
-                      className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Generate commit message"
-                    >
-                      {isGeneratingMessage ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                    </button>
-                    <div style={{ display: 'none' }}>
-                      <MicButton
-                        onTranscript={(transcript) => setCommitMessage(transcript)}
-                        mode="default"
-                        className="p-1.5"
+              {/* Mobile Commit Toggle Button / Desktop Always Visible - Hide when files expanded */}
+              <div className={`transition-all duration-300 ease-in-out ${
+                expandedFiles.size === 0 
+                  ? 'max-h-96 opacity-100 translate-y-0' 
+                  : 'max-h-0 opacity-0 -translate-y-2 overflow-hidden'
+              }`}>
+                {isMobile && isCommitAreaCollapsed ? (
+                  <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={() => setIsCommitAreaCollapsed(false)}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        <GitCommit className="w-4 h-4" />
+                        <span>Commit {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''}</span>
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                <>
+                  {/* Commit Message Input */}
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    {/* Mobile collapse button */}
+                    {isMobile && (
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">Commit Changes</span>
+                        <button
+                          onClick={() => setIsCommitAreaCollapsed(true)}
+                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                        >
+                          <ChevronDown className="w-4 h-4 rotate-180" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    <div className="relative">
+                      <textarea
+                        ref={textareaRef}
+                        value={commitMessage}
+                        onChange={(e) => setCommitMessage(e.target.value)}
+                        placeholder="Message (Ctrl+Enter to commit)"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 resize-none pr-20"
+                        rows="3"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                            handleCommit();
+                          }
+                        }}
                       />
+                      <div className="absolute right-2 top-2 flex gap-1">
+                        <button
+                          onClick={generateCommitMessage}
+                          disabled={selectedFiles.size === 0 || isGeneratingMessage}
+                          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Generate commit message"
+                        >
+                          {isGeneratingMessage ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-4 h-4" />
+                          )}
+                        </button>
+                        <div style={{ display: 'none' }}>
+                          <MicButton
+                            onTranscript={(transcript) => setCommitMessage(transcript)}
+                            mode="default"
+                            className="p-1.5"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">
+                        {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
+                      </span>
+                      <button
+                        onClick={handleCommit}
+                        disabled={!commitMessage.trim() || selectedFiles.size === 0 || isCommitting}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                      >
+                        <Check className="w-3 h-3" />
+                        <span>{isCommitting ? 'Committing...' : 'Commit'}</span>
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500">
-                    {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
-                  </span>
-                  <button
-                    onClick={handleCommit}
-                    disabled={!commitMessage.trim() || selectedFiles.size === 0 || isCommitting}
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                  >
-                    <Check className="w-3 h-3" />
-                    <span>{isCommitting ? 'Committing...' : 'Commit'}</span>
-                  </button>
-                </div>
+                  </>
+                  )}
               </div>
             </>
           )}
 
-          {/* File Selection Controls - Only show in changes view and when git is working */}
+          {/* File Selection Controls - Only show in changes view and when git is working and no files expanded */}
           {activeView === 'changes' && gitStatus && !gitStatus.error && (
-            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {selectedFiles.size} of {(gitStatus?.modified?.length || 0) + (gitStatus?.added?.length || 0) + (gitStatus?.deleted?.length || 0) + (gitStatus?.untracked?.length || 0)} files selected
+            <div className={`border-b border-gray-200 dark:border-gray-700 flex items-center justify-between transition-all duration-300 ease-in-out ${isMobile ? 'px-3 py-1.5' : 'px-4 py-2'} ${
+              expandedFiles.size === 0 
+                ? 'max-h-16 opacity-100 translate-y-0' 
+                : 'max-h-0 opacity-0 -translate-y-2 overflow-hidden'
+            }`}>
+              <span className={`text-gray-600 dark:text-gray-400 ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                {selectedFiles.size} of {(gitStatus?.modified?.length || 0) + (gitStatus?.added?.length || 0) + (gitStatus?.deleted?.length || 0) + (gitStatus?.untracked?.length || 0)} {isMobile ? '' : 'files'} selected
               </span>
-              <div className="flex gap-2">
+              <div className={`flex ${isMobile ? 'gap-1' : 'gap-2'}`}>
                 <button
                   onClick={() => {
                     const allFiles = new Set([
@@ -628,23 +822,23 @@ function GitPanel({ selectedProject, isMobile }) {
                     ]);
                     setSelectedFiles(allFiles);
                   }}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  className={`text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ${isMobile ? 'text-xs' : 'text-xs'}`}
                 >
-                  Select All
+                  {isMobile ? 'All' : 'Select All'}
                 </button>
                 <span className="text-gray-300 dark:text-gray-600">|</span>
                 <button
                   onClick={() => setSelectedFiles(new Set())}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                  className={`text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ${isMobile ? 'text-xs' : 'text-xs'}`}
                 >
-                  Deselect All
+                  {isMobile ? 'None' : 'Deselect All'}
                 </button>
               </div>
             </div>
           )}
 
-          {/* Status Legend Toggle */}
-          {!gitStatus?.error && (
+          {/* Status Legend Toggle - Hide on mobile by default */}
+          {!gitStatus?.error && !isMobile && (
             <div className="border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowLegend(!showLegend)}
