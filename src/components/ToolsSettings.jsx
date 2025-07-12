@@ -15,6 +15,7 @@ function ToolsSettings({ isOpen, onClose }) {
   const [skipPermissions, setSkipPermissions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
+  const [projectSortOrder, setProjectSortOrder] = useState('name');
 
   // Common tool patterns
   const commonTools = [
@@ -51,11 +52,13 @@ function ToolsSettings({ isOpen, onClose }) {
         setAllowedTools(settings.allowedTools || []);
         setDisallowedTools(settings.disallowedTools || []);
         setSkipPermissions(settings.skipPermissions || false);
+        setProjectSortOrder(settings.projectSortOrder || 'name');
       } else {
         // Set defaults
         setAllowedTools([]);
         setDisallowedTools([]);
         setSkipPermissions(false);
+        setProjectSortOrder('name');
       }
     } catch (error) {
       console.error('Error loading tool settings:', error);
@@ -63,6 +66,7 @@ function ToolsSettings({ isOpen, onClose }) {
       setAllowedTools([]);
       setDisallowedTools([]);
       setSkipPermissions(false);
+      setProjectSortOrder('name');
     }
   };
 
@@ -75,6 +79,7 @@ function ToolsSettings({ isOpen, onClose }) {
         allowedTools,
         disallowedTools,
         skipPermissions,
+        projectSortOrder,
         lastUpdated: new Date().toISOString()
       };
       
@@ -180,6 +185,28 @@ function ToolsSettings({ isOpen, onClose }) {
                       )}
                     </span>
                   </button>
+                </div>
+                
+                {/* Project Sorting - Moved under Appearance */}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-foreground">
+                        Project Sorting
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        How projects are ordered in the sidebar
+                      </div>
+                    </div>
+                    <select
+                      value={projectSortOrder}
+                      onChange={(e) => setProjectSortOrder(e.target.value)}
+                      className="text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-32"
+                    >
+                      <option value="name">Alphabetical</option>
+                      <option value="date">Recent Activity</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
