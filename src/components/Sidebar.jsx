@@ -61,6 +61,7 @@ function Sidebar({
   const [additionalSessions, setAdditionalSessions] = useState({});
   const [initialSessionsLoaded, setInitialSessionsLoaded] = useState(new Set());
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [projectSortOrder, setProjectSortOrder] = useState('name');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
   const [editingSessionName, setEditingSessionName] = useState('');
@@ -124,6 +125,45 @@ function Sidebar({
       setInitialSessionsLoaded(newLoaded);
     }
   }, [projects, isLoading]);
+
+  // Load project sort order from settings
+  useEffect(() => {
+    const loadSortOrder = () => {
+      try {
+        const savedSettings = localStorage.getItem('claude-tools-settings');
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          setProjectSortOrder(settings.projectSortOrder || 'name');
+        }
+      } catch (error) {
+        console.error('Error loading sort order:', error);
+      }
+    };
+
+    // Load initially
+    loadSortOrder();
+
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'claude-tools-settings') {
+        loadSortOrder();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically when component is focused (for same-tab changes)
+    const checkInterval = setInterval(() => {
+      if (document.hasFocus()) {
+        loadSortOrder();
+      }
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(checkInterval);
+    };
+  }, []);
 
   const toggleProject = (projectName) => {
     const newExpanded = new Set(expandedProjects);
@@ -332,6 +372,35 @@ function Sidebar({
     const additional = additionalSessions[project.name] || [];
     return [...initialSessions, ...additional];
   };
+
+  // Helper function to get the last activity date for a project
+  const getProjectLastActivity = (project) => {
+    const allSessions = getAllSessions(project);
+    if (allSessions.length === 0) {
+      return new Date(0); // Return epoch date for projects with no sessions
+    }
+    
+    // Find the most recent session activity
+    const mostRecentDate = allSessions.reduce((latest, session) => {
+      const sessionDate = new Date(session.lastActivity);
+      return sessionDate > latest ? sessionDate : latest;
+    }, new Date(0));
+    
+    return mostRecentDate;
+  };
+
+  // Sort projects based on selected order
+  const sortedProjects = [...projects].sort((a, b) => {
+    if (projectSortOrder === 'date') {
+      // Sort by most recent activity (descending)
+      return getProjectLastActivity(b) - getProjectLastActivity(a);
+    } else {
+      // Sort by display name (user-defined) or fallback to name (ascending)
+      const nameA = a.displayName || a.name;
+      const nameB = b.displayName || b.name;
+      return nameA.localeCompare(nameB);
+    }
+  });
 
   return (
     <div className="h-full flex flex-col bg-card md:select-none">
