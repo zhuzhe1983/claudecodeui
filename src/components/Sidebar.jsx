@@ -200,14 +200,48 @@ function Sidebar({
     return starredProjects.has(projectName);
   };
 
-  // Sort projects to show starred ones first
+  // Helper function to get all sessions for a project (initial + additional)
+  const getAllSessions = (project) => {
+    const initialSessions = project.sessions || [];
+    const additional = additionalSessions[project.name] || [];
+    return [...initialSessions, ...additional];
+  };
+
+  // Helper function to get the last activity date for a project
+  const getProjectLastActivity = (project) => {
+    const allSessions = getAllSessions(project);
+    if (allSessions.length === 0) {
+      return new Date(0); // Return epoch date for projects with no sessions
+    }
+    
+    // Find the most recent session activity
+    const mostRecentDate = allSessions.reduce((latest, session) => {
+      const sessionDate = new Date(session.lastActivity);
+      return sessionDate > latest ? sessionDate : latest;
+    }, new Date(0));
+    
+    return mostRecentDate;
+  };
+
+  // Combined sorting: starred projects first, then by selected order
   const sortedProjects = [...projects].sort((a, b) => {
     const aStarred = isProjectStarred(a.name);
     const bStarred = isProjectStarred(b.name);
     
+    // First, sort by starred status
     if (aStarred && !bStarred) return -1;
     if (!aStarred && bStarred) return 1;
-    return 0; // Keep original order for same star status
+    
+    // For projects with same starred status, sort by selected order
+    if (projectSortOrder === 'date') {
+      // Sort by most recent activity (descending)
+      return getProjectLastActivity(b) - getProjectLastActivity(a);
+    } else {
+      // Sort by display name (user-defined) or fallback to name (ascending)
+      const nameA = a.displayName || a.name;
+      const nameB = b.displayName || b.name;
+      return nameA.localeCompare(nameB);
+    }
   });
 
   const startEditing = (project) => {
@@ -368,42 +402,6 @@ function Sidebar({
       setLoadingSessions(prev => ({ ...prev, [project.name]: false }));
     }
   };
-
-  // Helper function to get all sessions for a project (initial + additional)
-  const getAllSessions = (project) => {
-    const initialSessions = project.sessions || [];
-    const additional = additionalSessions[project.name] || [];
-    return [...initialSessions, ...additional];
-  };
-
-  // Helper function to get the last activity date for a project
-  const getProjectLastActivity = (project) => {
-    const allSessions = getAllSessions(project);
-    if (allSessions.length === 0) {
-      return new Date(0); // Return epoch date for projects with no sessions
-    }
-    
-    // Find the most recent session activity
-    const mostRecentDate = allSessions.reduce((latest, session) => {
-      const sessionDate = new Date(session.lastActivity);
-      return sessionDate > latest ? sessionDate : latest;
-    }, new Date(0));
-    
-    return mostRecentDate;
-  };
-
-  // Sort projects based on selected order
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (projectSortOrder === 'date') {
-      // Sort by most recent activity (descending)
-      return getProjectLastActivity(b) - getProjectLastActivity(a);
-    } else {
-      // Sort by display name (user-defined) or fallback to name (ascending)
-      const nameA = a.displayName || a.name;
-      const nameB = b.displayName || b.name;
-      return nameA.localeCompare(nameB);
-    }
-  });
 
   // Filter projects based on search input
   const filteredProjects = sortedProjects.filter(project => {
