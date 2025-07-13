@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles, Download } from 'lucide-react';
+import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles, Download, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
 import { MicButton } from './MicButton.jsx';
 import { authenticatedFetch } from '../utils/api';
 
@@ -28,6 +28,7 @@ function GitPanel({ selectedProject, isMobile }) {
   const [isFetching, setIsFetching] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
   const [isCommitAreaCollapsed, setIsCommitAreaCollapsed] = useState(isMobile); // Collapsed by default on mobile
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'discard|commit|pull', file?: string, message?: string }
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -234,6 +235,57 @@ function GitPanel({ selectedProject, isMobile }) {
       console.error('Error pulling from remote:', error);
     } finally {
       setIsPulling(false);
+    }
+  };
+
+  const discardChanges = async (filePath) => {
+    try {
+      const response = await authenticatedFetch('/api/git/discard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: selectedProject.name,
+          file: filePath
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Remove from selected files and refresh status
+        setSelectedFiles(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(filePath);
+          return newSet;
+        });
+        fetchGitStatus();
+      } else {
+        console.error('Discard failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error discarding changes:', error);
+    }
+  };
+
+  const confirmAndExecute = async () => {
+    if (!confirmAction) return;
+
+    const { type, file, message } = confirmAction;
+    setConfirmAction(null);
+
+    try {
+      switch (type) {
+        case 'discard':
+          await discardChanges(file);
+          break;
+        case 'commit':
+          await handleCommit();
+          break;
+        case 'pull':
+          await handlePull();
+          break;
+      }
+    } catch (error) {
+      console.error(`Error executing ${type}:`, error);
     }
   };
 
@@ -476,17 +528,36 @@ function GitPanel({ selectedProject, isMobile }) {
               <ChevronRight className={`w-3 h-3 transition-transform duration-200 ease-in-out ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
             </div>
             <span className={`flex-1 truncate ${isMobile ? 'text-xs' : 'text-sm'}`}>{filePath}</span>
-            <span 
-              className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold border ${
-                status === 'M' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' :
-                status === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-800' :
-                status === 'D' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800' :
-                'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600'
-              }`}
-              title={getStatusLabel(status)}
-            >
-              {status}
-            </span>
+            <div className="flex items-center gap-1">
+              {(status === 'M' || status === 'D') && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmAction({ 
+                      type: 'discard', 
+                      file: filePath,
+                      message: `Discard all changes to "${filePath}"? This action cannot be undone.` 
+                    });
+                  }}
+                  className={`${isMobile ? 'px-2 py-1 text-xs' : 'p-1'} hover:bg-red-100 dark:hover:bg-red-900 rounded text-red-600 dark:text-red-400 font-medium flex items-center gap-1`}
+                  title="Discard changes"
+                >
+                  <Trash2 className={`${isMobile ? 'w-3 h-3' : 'w-3 h-3'}`} />
+                  {isMobile && <span>Discard</span>}
+                </button>
+              )}
+              <span 
+                className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold border ${
+                  status === 'M' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800' :
+                  status === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border-green-200 dark:border-green-800' :
+                  status === 'D' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 border-red-200 dark:border-red-800' :
+                  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600'
+                }`}
+                title={getStatusLabel(status)}
+              >
+                {status}
+              </span>
+            </div>
           </div>
         </div>
         <div className={`bg-gray-50 dark:bg-gray-900 transition-all duration-400 ease-in-out overflow-hidden ${
@@ -618,7 +689,10 @@ function GitPanel({ selectedProject, isMobile }) {
               {/* Pull button - show when behind (primary action) */}
               {remoteStatus.behind > 0 && (
                 <button
-                  onClick={handlePull}
+                  onClick={() => setConfirmAction({ 
+                    type: 'pull', 
+                    message: `Pull ${remoteStatus.behind} commit${remoteStatus.behind !== 1 ? 's' : ''} from ${remoteStatus.remoteName}?` 
+                  })}
                   disabled={isPulling}
                   className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
                   title={`Pull ${remoteStatus.behind} commit${remoteStatus.behind !== 1 ? 's' : ''} from ${remoteStatus.remoteName}`}
@@ -785,7 +859,10 @@ function GitPanel({ selectedProject, isMobile }) {
                         {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
                       </span>
                       <button
-                        onClick={handleCommit}
+                        onClick={() => setConfirmAction({ 
+                          type: 'commit', 
+                          message: `Commit ${selectedFiles.size} file${selectedFiles.size !== 1 ? 's' : ''} with message: "${commitMessage.trim()}"?` 
+                        })}
                         disabled={!commitMessage.trim() || selectedFiles.size === 0 || isCommitting}
                         className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >
@@ -978,6 +1055,70 @@ function GitPanel({ selectedProject, isMobile }) {
                     <>
                       <Plus className="w-3 h-3" />
                       <span>Create Branch</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setConfirmAction(null)} />
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className={`p-2 rounded-full mr-3 ${
+                  confirmAction.type === 'discard' ? 'bg-red-100 dark:bg-red-900' : 'bg-yellow-100 dark:bg-yellow-900'
+                }`}>
+                  <AlertTriangle className={`w-5 h-5 ${
+                    confirmAction.type === 'discard' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'
+                  }`} />
+                </div>
+                <h3 className="text-lg font-semibold">
+                  {confirmAction.type === 'discard' ? 'Discard Changes' : 
+                   confirmAction.type === 'commit' ? 'Confirm Commit' : 'Confirm Pull'}
+                </h3>
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                {confirmAction.message}
+              </p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAndExecute}
+                  className={`px-4 py-2 text-sm text-white rounded-md ${
+                    confirmAction.type === 'discard' 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : confirmAction.type === 'commit'
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-green-600 hover:bg-green-700'
+                  } flex items-center space-x-2`}
+                >
+                  {confirmAction.type === 'discard' ? (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Discard</span>
+                    </>
+                  ) : confirmAction.type === 'commit' ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Commit</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Pull</span>
                     </>
                   )}
                 </button>

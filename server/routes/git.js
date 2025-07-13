@@ -583,4 +583,43 @@ router.post('/pull', async (req, res) => {
   }
 });
 
+// Discard changes for a specific file
+router.post('/discard', async (req, res) => {
+  const { project, file } = req.body;
+  
+  if (!project || !file) {
+    return res.status(400).json({ error: 'Project name and file path are required' });
+  }
+
+  try {
+    const projectPath = await getActualProjectPath(project);
+    await validateGitRepository(projectPath);
+
+    // Check file status to determine correct discard command
+    const { stdout: statusOutput } = await execAsync(`git status --porcelain "${file}"`, { cwd: projectPath });
+    
+    if (!statusOutput.trim()) {
+      return res.status(400).json({ error: 'No changes to discard for this file' });
+    }
+
+    const status = statusOutput.substring(0, 2);
+    
+    if (status === '??') {
+      // Untracked file - delete it
+      await fs.unlink(path.join(projectPath, file));
+    } else if (status.includes('M') || status.includes('D')) {
+      // Modified or deleted file - restore from HEAD
+      await execAsync(`git restore "${file}"`, { cwd: projectPath });
+    } else if (status.includes('A')) {
+      // Added file - unstage it
+      await execAsync(`git reset HEAD "${file}"`, { cwd: projectPath });
+    }
+    
+    res.json({ success: true, message: `Changes discarded for ${file}` });
+  } catch (error) {
+    console.error('Git discard error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

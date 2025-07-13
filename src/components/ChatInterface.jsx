@@ -1027,6 +1027,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
   const [isTextareaExpanded, setIsTextareaExpanded] = useState(false);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(-1);
   const [slashPosition, setSlashPosition] = useState(-1);
+  const [visibleMessageCount, setVisibleMessageCount] = useState(100);
   const [claudeStatus, setClaudeStatus] = useState(null);
 
 
@@ -1630,14 +1631,13 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
     return () => clearTimeout(timer);
   }, [input]);
 
-  // Show only recent messages for better performance (last 100 messages)
+  // Show only recent messages for better performance
   const visibleMessages = useMemo(() => {
-    const maxMessages = 100;
-    if (chatMessages.length <= maxMessages) {
+    if (chatMessages.length <= visibleMessageCount) {
       return chatMessages;
     }
-    return chatMessages.slice(-maxMessages);
-  }, [chatMessages]);
+    return chatMessages.slice(-visibleMessageCount);
+  }, [chatMessages, visibleMessageCount]);
 
   // Capture scroll position before render when auto-scroll is disabled
   useEffect(() => {
@@ -1735,6 +1735,11 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         return newInput;
       });
     }
+  }, []);
+
+  // Load earlier messages by increasing the visible message count
+  const loadEarlierMessages = useCallback(() => {
+    setVisibleMessageCount(prevCount => prevCount + 100);
   }, []);
 
   // Handle image files from drag & drop or file picker
@@ -2081,10 +2086,13 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
           </div>
         ) : (
           <>
-            {chatMessages.length > 100 && (
+            {chatMessages.length > visibleMessageCount && (
               <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-2 border-b border-gray-200 dark:border-gray-700">
-                Showing last 100 messages ({chatMessages.length} total) • 
-                <button className="ml-1 text-blue-600 hover:text-blue-700 underline">
+                Showing last {visibleMessageCount} messages ({chatMessages.length} total) • 
+                <button 
+                  className="ml-1 text-blue-600 hover:text-blue-700 underline"
+                  onClick={loadEarlierMessages}
+                >
                   Load earlier messages
                 </button>
               </div>
