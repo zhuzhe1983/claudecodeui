@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles, Download, RotateCcw, Trash2, AlertTriangle } from 'lucide-react';
+import { GitBranch, GitCommit, Plus, Minus, RefreshCw, Check, X, ChevronDown, ChevronRight, Info, History, FileText, Mic, MicOff, Sparkles, Download, RotateCcw, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { MicButton } from './MicButton.jsx';
 import { authenticatedFetch } from '../utils/api';
 
@@ -27,8 +27,9 @@ function GitPanel({ selectedProject, isMobile }) {
   const [remoteStatus, setRemoteStatus] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
+  const [isPushing, setIsPushing] = useState(false);
   const [isCommitAreaCollapsed, setIsCommitAreaCollapsed] = useState(isMobile); // Collapsed by default on mobile
-  const [confirmAction, setConfirmAction] = useState(null); // { type: 'discard|commit|pull', file?: string, message?: string }
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'discard|commit|pull|push', file?: string, message?: string }
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -238,6 +239,33 @@ function GitPanel({ selectedProject, isMobile }) {
     }
   };
 
+  const handlePush = async () => {
+    setIsPushing(true);
+    try {
+      const response = await authenticatedFetch('/api/git/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project: selectedProject.name
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        // Refresh status after successful push
+        fetchGitStatus();
+        fetchRemoteStatus();
+      } else {
+        console.error('Push failed:', data.error);
+        // TODO: Show user-friendly error message
+      }
+    } catch (error) {
+      console.error('Error pushing to remote:', error);
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
   const discardChanges = async (filePath) => {
     try {
       const response = await authenticatedFetch('/api/git/discard', {
@@ -282,6 +310,9 @@ function GitPanel({ selectedProject, isMobile }) {
           break;
         case 'pull':
           await handlePull();
+          break;
+        case 'push':
+          await handlePush();
           break;
       }
     } catch (error) {
@@ -702,6 +733,22 @@ function GitPanel({ selectedProject, isMobile }) {
                 </button>
               )}
               
+              {/* Push button - show when ahead (primary action when ahead only) */}
+              {remoteStatus.ahead > 0 && (
+                <button
+                  onClick={() => setConfirmAction({ 
+                    type: 'push', 
+                    message: `Push ${remoteStatus.ahead} commit${remoteStatus.ahead !== 1 ? 's' : ''} to ${remoteStatus.remoteName}?` 
+                  })}
+                  disabled={isPushing}
+                  className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1"
+                  title={`Push ${remoteStatus.ahead} commit${remoteStatus.ahead !== 1 ? 's' : ''} to ${remoteStatus.remoteName}`}
+                >
+                  <Upload className={`w-3 h-3 ${isPushing ? 'animate-pulse' : ''}`} />
+                  <span>{isPushing ? 'Pushing...' : `Push ${remoteStatus.ahead}`}</span>
+                </button>
+              )}
+              
               {/* Fetch button - show when ahead only or when diverged (secondary action) */}
               {(remoteStatus.ahead > 0 || (remoteStatus.behind > 0 && remoteStatus.ahead > 0)) && (
                 <button
@@ -1080,7 +1127,8 @@ function GitPanel({ selectedProject, isMobile }) {
                 </div>
                 <h3 className="text-lg font-semibold">
                   {confirmAction.type === 'discard' ? 'Discard Changes' : 
-                   confirmAction.type === 'commit' ? 'Confirm Commit' : 'Confirm Pull'}
+                   confirmAction.type === 'commit' ? 'Confirm Commit' : 
+                   confirmAction.type === 'pull' ? 'Confirm Pull' : 'Confirm Push'}
                 </h3>
               </div>
               
@@ -1102,7 +1150,9 @@ function GitPanel({ selectedProject, isMobile }) {
                       ? 'bg-red-600 hover:bg-red-700' 
                       : confirmAction.type === 'commit'
                       ? 'bg-blue-600 hover:bg-blue-700'
-                      : 'bg-green-600 hover:bg-green-700'
+                      : confirmAction.type === 'pull'
+                      ? 'bg-green-600 hover:bg-green-700'
+                      : 'bg-orange-600 hover:bg-orange-700'
                   } flex items-center space-x-2`}
                 >
                   {confirmAction.type === 'discard' ? (
