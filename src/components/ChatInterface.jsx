@@ -118,7 +118,7 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
           
           <div className="w-full">
             
-            {message.isToolUse && message.toolName !== 'Read' ? (
+            {message.isToolUse && !['Read', 'TodoWrite', 'TodoRead'].includes(message.toolName) ? (
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2 sm:p-3 mb-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -886,6 +886,34 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                   );
                 }
               })()
+            ) : message.isToolUse && message.toolName === 'TodoWrite' ? (
+              // Simple TodoWrite tool indicator with tasks
+              (() => {
+                try {
+                  const input = JSON.parse(message.toolInput);
+                  if (input.todos && Array.isArray(input.todos)) {
+                    return (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-300 dark:border-blue-600 pl-3 py-1 mb-2">
+                        <div className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                          📝 Update todo list
+                        </div>
+                        <TodoList todos={input.todos} />
+                      </div>
+                    );
+                  }
+                } catch (e) {
+                  return (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-300 dark:border-blue-600 pl-3 py-1 mb-2 text-sm text-blue-700 dark:text-blue-300">
+                      📝 Update todo list
+                    </div>
+                  );
+                }
+              })()
+            ) : message.isToolUse && message.toolName === 'TodoRead' ? (
+              // Simple TodoRead tool indicator
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-300 dark:border-blue-600 pl-3 py-1 mb-2 text-sm text-blue-700 dark:text-blue-300">
+                📋 Read todo list
+              </div>
             ) : (
               <div className="text-sm text-gray-700 dark:text-gray-300">
                 {message.type === 'assistant' ? (
