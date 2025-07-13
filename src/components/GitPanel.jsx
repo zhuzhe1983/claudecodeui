@@ -451,6 +451,7 @@ function GitPanel({ selectedProject, isMobile }) {
         setCommitMessage('');
         setSelectedFiles(new Set());
         fetchGitStatus();
+        fetchRemoteStatus();
       } else {
         console.error('Commit failed:', data.error);
       }
