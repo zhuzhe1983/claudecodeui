@@ -130,18 +130,6 @@ async function setupProjectsWatcher() {
   }
 }
 
-// Get the first non-localhost IP address
-function getServerIP() {
-  const interfaces = os.networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
-    }
-  }
-  return 'localhost';
-}
 
 const app = express();
 const server = http.createServer(app);
@@ -188,9 +176,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 
 // API Routes (protected)
 app.get('/api/config', authenticateToken, (req, res) => {
-  // Always use the server's actual IP and port for WebSocket connections
-  const serverIP = getServerIP();
-  const host = `${serverIP}:${PORT}`;
+  const host = req.headers.host || `${req.hostname}:${PORT}`;
   const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'wss' : 'ws';
   
   console.log('Config API called - Returning host:', host, 'Protocol:', protocol);
