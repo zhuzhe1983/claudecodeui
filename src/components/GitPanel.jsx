@@ -1165,10 +1165,15 @@ function GitPanel({ selectedProject, isMobile }) {
                       <Check className="w-4 h-4" />
                       <span>Commit</span>
                     </>
-                  ) : (
+                  ) : confirmAction.type === 'pull' ? (
                     <>
                       <Download className="w-4 h-4" />
                       <span>Pull</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Push</span>
                     </>
                   )}
                 </button>
