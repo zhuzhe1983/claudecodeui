@@ -583,6 +583,76 @@ router.post('/pull', async (req, res) => {
   }
 });
 
+// Push commits to remote repository
+router.post('/push', async (req, res) => {
+  const { project } = req.body;
+  
+  if (!project) {
+    return res.status(400).json({ error: 'Project name is required' });
+  }
+
+  try {
+    const projectPath = await getActualProjectPath(project);
+    await validateGitRepository(projectPath);
+
+    // Get current branch and its upstream remote
+    const { stdout: currentBranch } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: projectPath });
+    const branch = currentBranch.trim();
+
+    let remoteName = 'origin'; // fallback
+    let remoteBranch = branch; // fallback
+    try {
+      const { stdout } = await execAsync(`git rev-parse --abbrev-ref ${branch}@{upstream}`, { cwd: projectPath });
+      const tracking = stdout.trim();
+      remoteName = tracking.split('/')[0]; // Extract remote name
+      remoteBranch = tracking.split('/').slice(1).join('/'); // Extract branch name
+    } catch (error) {
+      // No upstream, use fallback
+      console.log('No upstream configured, using origin/branch as fallback');
+    }
+
+    const { stdout } = await execAsync(`git push ${remoteName} ${remoteBranch}`, { cwd: projectPath });
+    
+    res.json({ 
+      success: true, 
+      output: stdout || 'Push completed successfully', 
+      remoteName,
+      remoteBranch
+    });
+  } catch (error) {
+    console.error('Git push error:', error);
+    
+    // Enhanced error handling for common push scenarios
+    let errorMessage = 'Push failed';
+    let details = error.message;
+    
+    if (error.message.includes('rejected')) {
+      errorMessage = 'Push rejected';
+      details = 'The remote has newer commits. Pull first to merge changes before pushing.';
+    } else if (error.message.includes('non-fast-forward')) {
+      errorMessage = 'Non-fast-forward push';
+      details = 'Your branch is behind the remote. Pull the latest changes first.';
+    } else if (error.message.includes('Could not resolve hostname')) {
+      errorMessage = 'Network error';
+      details = 'Unable to connect to remote repository. Check your internet connection.';
+    } else if (error.message.includes('fatal: \'origin\' does not appear to be a git repository')) {
+      errorMessage = 'Remote not configured';
+      details = 'No remote repository configured. Add a remote with: git remote add origin <url>';
+    } else if (error.message.includes('Permission denied')) {
+      errorMessage = 'Authentication failed';
+      details = 'Permission denied. Check your credentials or SSH keys.';
+    } else if (error.message.includes('no upstream branch')) {
+      errorMessage = 'No upstream branch';
+      details = 'No upstream branch configured. Use: git push --set-upstream origin <branch>';
+    }
+    
+    res.status(500).json({ 
+      error: errorMessage, 
+      details: details
+    });
+  }
+});
+
 // Discard changes for a specific file
 router.post('/discard', async (req, res) => {
   const { project, file } = req.body;
