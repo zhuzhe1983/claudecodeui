@@ -40,15 +40,79 @@ A desktop and mobile UI for [Claude Code](https://docs.anthropic.com/en/docs/cla
 - **Git Explorer** - View, stage and commit your changes. You can also switch branches 
 - **Session Management** - Resume conversations, manage multiple sessions, and track history
 
+## 🎉 Latest Updates (v1.5.0)
+
+### 🤖 Subagent Management System
+- **Browse Claude Code Agents** - View and search through all 60+ available Claude Code subagents
+- **Smart Filtering** - Filter agents by model type (Opus, Sonnet, Haiku) with real-time search
+- **Detailed Agent Info** - Expandable cards showing agent descriptions, categories, and full instructions
+- **Pagination Support** - Efficiently browse large collections with 20 agents per page
+
+### 🐳 Docker Deployment
+- **One-Command Deploy** - Full Docker support with `docker-compose up`
+- **Pre-configured Setup** - Automated Claude Code installation and configuration
+- **Volume Mounting** - Seamless access to your local workspace and Claude credentials
+- **Health Checks** - Built-in monitoring and auto-restart capabilities
+
+### 📝 Monaco Editor Integration
+- **VS Code Experience** - Full-featured Monaco editor with syntax highlighting
+- **Multiple Themes** - Support for popular VS Code themes
+- **IntelliSense** - Code completion and suggestions
+- **Integrated File Editing** - Edit files directly in the browser with professional IDE features
+
+### 🎙️ Voice Input Support
+- **Speech-to-Text** - Voice input using Web Speech API or OpenAI Whisper
+- **Multi-language** - Support for multiple languages in voice recognition
+- **Configurable** - Choose between browser-based or API-based transcription
+
+### 🌏 Internationalization (i18n)
+- **Full Chinese Support** - Complete UI translation to Simplified Chinese
+- **Language Toggle** - Easy switching between English and Chinese
+- **Persistent Settings** - Language preference saved across sessions
+
+### 📱 Enhanced Mobile Experience
+- **Improved Navigation** - Better touch controls and gesture support
+- **Responsive Layouts** - Optimized UI for small screens
+- **Mobile-First Features** - Dedicated mobile input components
+
+### 🎨 UI/UX Improvements
+- **Dark/Light Themes** - Full theme support with smooth transitions
+- **Keyboard Navigation** - Complete keyboard shortcuts for power users
+- **Accessibility** - WCAG compliant with screen reader support
+- **Loading States** - Better feedback during operations
 
 ## Quick Start
 
-### Prerequisites
+### 🚀 Docker Quick Start (Recommended)
+
+The fastest way to get started is using Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/zhuzhe1983/claudecodeui.git
+cd claudecodeui
+
+# Copy and configure environment
+cp .env.example .env.docker
+# Edit .env.docker if needed (default port: 9998)
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Access the application
+# Open http://localhost:9998 in your browser
+```
+
+**Note**: Make sure your `~/.claude` directory contains valid credentials for Claude Code to work properly.
+
+### Traditional Installation
+
+#### Prerequisites
 
 - [Node.js](https://nodejs.org/) v20 or higher
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and configured
 
-### Installation
+#### Installation
 
 1. **Clone the repository:**
 ```bash
