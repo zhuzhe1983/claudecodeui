@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ClaudeLogo from './ClaudeLogo';
+import { t } from '../utils/i18n';
 
 const SetupForm = () => {
   const [username, setUsername] = useState('');
@@ -50,7 +51,7 @@ const SetupForm = () => {
             <div className="flex justify-center mb-4">
               <ClaudeLogo size={64} />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Welcome to Claude Code UI</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('welcomeToClaudeCodeUI')}</h1>
             <p className="text-muted-foreground mt-2">
               Set up your account to get started
             </p>
@@ -68,7 +69,7 @@ const SetupForm = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your username"
+                placeholder={t('enterYourUsername')}
                 required
                 disabled={isLoading}
               />
@@ -84,7 +85,7 @@ const SetupForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your password"
+                placeholder={t('enterYourPassword')}
                 required
                 disabled={isLoading}
               />
@@ -100,7 +101,7 @@ const SetupForm = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm your password"
+                placeholder={t('confirmYourPassword')}
                 required
                 disabled={isLoading}
               />
@@ -117,7 +118,7 @@ const SetupForm = () => {
               disabled={isLoading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
             >
-              {isLoading ? 'Setting up...' : 'Create Account'}
+              {isLoading ? t('settingUp') : t('createAccount')}
             </button>
           </form>
 

@@ -4,6 +4,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { WebglAddon } from '@xterm/addon-webgl';
 import 'xterm/css/xterm.css';
+import { t } from '../utils/i18n';
 
 // CSS to remove xterm focus outline
 const xtermStyles = `
@@ -433,7 +434,7 @@ function Shell({ selectedProject, selectedSession, isActive }) {
             setTimeout(() => {
               const initPayload = {
                 type: 'init',
-                projectPath: selectedProject.fullPath || selectedProject.path,
+                projectPath: selectedProject.name,  // Send project name, server will extract the path
                 sessionId: selectedSession?.id,
                 hasSession: !!selectedSession,
                 cols: terminal.current.cols,
@@ -550,7 +551,7 @@ function Shell({ selectedProject, selectedSession, isActive }) {
               <button
                 onClick={disconnectFromShell}
                 className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 flex items-center space-x-1"
-                title="Disconnect from shell"
+                title={t('disconnectFromShell')}
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -592,7 +593,7 @@ function Shell({ selectedProject, selectedSession, isActive }) {
               <button
                 onClick={connectToShell}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 text-base font-medium w-full sm:w-auto"
-                title="Connect to shell"
+                title={t('connectToShell')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

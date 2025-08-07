@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
-import { Folder, FolderOpen, File, FileText, FileCode, List, TableProperties, Eye } from 'lucide-react';
+import { Folder, FolderOpen, File, FileText, FileCode, List, TableProperties, Eye, GripVertical } from 'lucide-react';
 import { cn } from '../lib/utils';
-import CodeEditor from './CodeEditor';
+import MonacoEditor from './MonacoEditor';
 import ImageViewer from './ImageViewer';
 import { api } from '../utils/api';
+import { useTheme } from '../contexts/ThemeContext';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { t } from '../utils/i18n';
 
 function FileTree({ selectedProject }) {
   const [files, setFiles] = useState([]);
@@ -14,6 +17,9 @@ function FileTree({ selectedProject }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [viewMode, setViewMode] = useState('detailed'); // 'simple', 'detailed', 'compact'
+  const [showEditor, setShowEditor] = useState(false);
+  const [fileContent, setFileContent] = useState('');
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     if (selectedProject) {
@@ -31,6 +37,7 @@ function FileTree({ selectedProject }) {
 
   const fetchFiles = async () => {
     setLoading(true);
+    console.log('🔍 Fetching files for project:', selectedProject);
     try {
       const response = await api.getFiles(selectedProject.name);
       
@@ -42,12 +49,58 @@ function FileTree({ selectedProject }) {
       }
       
       const data = await response.json();
+      console.log('📁 Files received:', data);
       setFiles(data);
     } catch (error) {
       console.error('❌ Error fetching files:', error);
       setFiles([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFileContent = async (file) => {
+    try {
+      const response = await api.readFile(file.projectName, file.path);
+      if (response.ok) {
+        const text = await response.text();
+        let content = text;
+        
+        // Check if the response is JSON with a content field
+        try {
+          const json = JSON.parse(text);
+          if (json.content !== undefined) {
+            content = json.content;
+          }
+        } catch (e) {
+          // Not JSON, use as-is
+          content = text;
+        }
+        
+        setFileContent(content);
+        setSelectedFile(file);
+        setShowEditor(true);
+      }
+    } catch (error) {
+      console.error('Failed to load file content:', error);
+    }
+  };
+
+  const handleFileSave = async (content) => {
+    if (!selectedFile) return;
+    
+    try {
+      const response = await api.saveFile(
+        selectedFile.projectName,
+        selectedFile.path,
+        content
+      );
+      if (response.ok) {
+        setFileContent(content);
+        console.log('File saved successfully');
+      }
+    } catch (error) {
+      console.error('Failed to save file:', error);
     }
   };
 
@@ -111,8 +164,8 @@ function FileTree({ selectedProject }) {
                 projectName: selectedProject.name
               });
             } else {
-              // Open file in editor
-              setSelectedFile({
+              // Open file in integrated editor
+              loadFileContent({
                 name: item.name,
                 path: item.path,
                 projectPath: selectedProject.path,
@@ -193,7 +246,7 @@ function FileTree({ selectedProject }) {
                 projectName: selectedProject.name
               });
             } else {
-              setSelectedFile({
+              loadFileContent({
                 name: item.name,
                 path: item.path,
                 projectPath: selectedProject.path,
@@ -255,7 +308,7 @@ function FileTree({ selectedProject }) {
                 projectName: selectedProject.name
               });
             } else {
-              setSelectedFile({
+              loadFileContent({
                 name: item.name,
                 path: item.path,
                 projectPath: selectedProject.path,
@@ -306,6 +359,102 @@ function FileTree({ selectedProject }) {
     );
   }
 
+  if (showEditor) {
+    return (
+      <PanelGroup direction="horizontal" className="h-full bg-card">
+        <Panel defaultSize={35} minSize={20} maxSize={60}>
+          <div className="h-full flex flex-col">
+      {/* View Mode Toggle */}
+      <div className="p-4 border-b border-border flex items-center justify-between">
+        <h3 className="text-sm font-medium text-foreground">Files</h3>
+        <div className="flex gap-1">
+          <Button
+            variant={viewMode === 'simple' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => changeViewMode('simple')}
+            title={t('simpleView')}
+          >
+            <List className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'compact' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => changeViewMode('compact')}
+            title={t('compactView')}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant={viewMode === 'detailed' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => changeViewMode('detailed')}
+            title={t('detailedView')}
+          >
+            <TableProperties className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Column Headers for Detailed View */}
+      {viewMode === 'detailed' && files.length > 0 && (
+        <div className="px-4 pt-2 pb-1 border-b border-border">
+          <div className="grid grid-cols-12 gap-2 px-2 text-xs font-medium text-muted-foreground">
+            <div className="col-span-5">{t('name')}</div>
+            <div className="col-span-2">{t('size')}</div>
+            <div className="col-span-3">{t('modified')}</div>
+            <div className="col-span-2">{t('permissions')}</div>
+          </div>
+        </div>
+      )}
+      
+      <ScrollArea className="flex-1 p-4">
+        {files.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-3">
+              <Folder className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <h4 className="font-medium text-foreground mb-1">{t('noFilesFound')}</h4>
+            <p className="text-sm text-muted-foreground">
+              {t('checkProjectPath')}
+            </p>
+          </div>
+        ) : (
+          <div className={viewMode === 'detailed' ? '' : 'space-y-1'}>
+            {viewMode === 'simple' && renderFileTree(files)}
+            {viewMode === 'compact' && renderCompactView(files)}
+            {viewMode === 'detailed' && renderDetailedView(files)}
+          </div>
+        )}
+      </ScrollArea>
+          </div>
+        </Panel>
+        
+        <PanelResizeHandle className="w-1 bg-border hover:bg-primary/20 transition-colors relative group">
+          <div className="absolute inset-y-0 left-1/2 transform -translate-x-1/2 w-6 flex items-center justify-center">
+            <GripVertical className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+          </div>
+        </PanelResizeHandle>
+        
+        <Panel defaultSize={65} minSize={30}>
+          <MonacoEditor
+            file={selectedFile.name}
+            content={fileContent}
+            onSave={handleFileSave}
+            onClose={() => {
+              setShowEditor(false);
+              setSelectedFile(null);
+              setFileContent('');
+            }}
+            isDarkMode={isDarkMode}
+          />
+        </Panel>
+      </PanelGroup>
+    );
+  }
+  
   return (
     <div className="h-full flex flex-col bg-card">
       {/* View Mode Toggle */}
@@ -317,7 +466,7 @@ function FileTree({ selectedProject }) {
             size="sm"
             className="h-8 w-8 p-0"
             onClick={() => changeViewMode('simple')}
-            title="Simple view"
+            title={t('simpleView')}
           >
             <List className="w-4 h-4" />
           </Button>
@@ -326,7 +475,7 @@ function FileTree({ selectedProject }) {
             size="sm"
             className="h-8 w-8 p-0"
             onClick={() => changeViewMode('compact')}
-            title="Compact view"
+            title={t('compactView')}
           >
             <Eye className="w-4 h-4" />
           </Button>
@@ -335,7 +484,7 @@ function FileTree({ selectedProject }) {
             size="sm"
             className="h-8 w-8 p-0"
             onClick={() => changeViewMode('detailed')}
-            title="Detailed view"
+            title={t('detailedView')}
           >
             <TableProperties className="w-4 h-4" />
           </Button>
@@ -346,10 +495,10 @@ function FileTree({ selectedProject }) {
       {viewMode === 'detailed' && files.length > 0 && (
         <div className="px-4 pt-2 pb-1 border-b border-border">
           <div className="grid grid-cols-12 gap-2 px-2 text-xs font-medium text-muted-foreground">
-            <div className="col-span-5">Name</div>
-            <div className="col-span-2">Size</div>
-            <div className="col-span-3">Modified</div>
-            <div className="col-span-2">Permissions</div>
+            <div className="col-span-5">{t('name')}</div>
+            <div className="col-span-2">{t('size')}</div>
+            <div className="col-span-3">{t('modified')}</div>
+            <div className="col-span-2">{t('permissions')}</div>
           </div>
         </div>
       )}
@@ -360,9 +509,9 @@ function FileTree({ selectedProject }) {
             <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-3">
               <Folder className="w-6 h-6 text-muted-foreground" />
             </div>
-            <h4 className="font-medium text-foreground mb-1">No files found</h4>
+            <h4 className="font-medium text-foreground mb-1">{t('noFilesFound')}</h4>
             <p className="text-sm text-muted-foreground">
-              Check if the project path is accessible
+              {t('checkProjectPath')}
             </p>
           </div>
         ) : (
@@ -373,15 +522,6 @@ function FileTree({ selectedProject }) {
           </div>
         )}
       </ScrollArea>
-      
-      {/* Code Editor Modal */}
-      {selectedFile && (
-        <CodeEditor
-          file={selectedFile}
-          onClose={() => setSelectedFile(null)}
-          projectPath={selectedFile.projectPath}
-        />
-      )}
       
       {/* Image Viewer Modal */}
       {selectedImage && (

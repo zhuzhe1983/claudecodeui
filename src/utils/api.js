@@ -1,14 +1,10 @@
 // Utility function for authenticated API calls
 export const authenticatedFetch = (url, options = {}) => {
-  const token = localStorage.getItem('auth-token');
-  
+  // No-auth mode: always include a dummy token
   const defaultHeaders = {
     'Content-Type': 'application/json',
+    'Authorization': 'Bearer no-auth-token'
   };
-  
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
-  }
   
   return fetch(url, {
     ...options,
@@ -78,4 +74,6 @@ export const api = {
       body: formData,
       headers: {}, // Let browser set Content-Type for FormData
     }),
+  // Agents API
+  get: (endpoint) => authenticatedFetch(`/api${endpoint}`),
 };

@@ -21,60 +21,20 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('auth-token'));
-  const [isLoading, setIsLoading] = useState(true);
+  // Default user for no-auth mode
+  const [user, setUser] = useState({ id: 1, username: 'default-user' });
+  const [token, setToken] = useState('no-auth-token');
+  const [isLoading, setIsLoading] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check authentication status on mount
+  // Skip authentication check in no-auth mode
   useEffect(() => {
-    checkAuthStatus();
+    // No auth check needed
   }, []);
 
   const checkAuthStatus = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Check if system needs setup
-      const statusResponse = await api.auth.status();
-      const statusData = await statusResponse.json();
-      
-      if (statusData.needsSetup) {
-        setNeedsSetup(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      // If we have a token, verify it
-      if (token) {
-        try {
-          const userResponse = await api.auth.user();
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            setUser(userData.user);
-            setNeedsSetup(false);
-          } else {
-            // Token is invalid
-            localStorage.removeItem('auth-token');
-            setToken(null);
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Token verification failed:', error);
-          localStorage.removeItem('auth-token');
-          setToken(null);
-          setUser(null);
-        }
-      }
-    } catch (error) {
-      console.error('Auth status check failed:', error);
-      setError('Failed to check authentication status');
-    } finally {
-      setIsLoading(false);
-    }
+    // No auth check needed in no-auth mode
   };
 
   const login = async (username, password) => {

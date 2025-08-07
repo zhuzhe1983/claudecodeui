@@ -23,8 +23,9 @@ import TodoList from './TodoList';
 import ClaudeLogo from './ClaudeLogo.jsx';
 
 import ClaudeStatus from './ClaudeStatus';
-import { MicButton } from './MicButton.jsx';
+import VoiceInput from './VoiceInput';
 import { api } from '../utils/api';
+import { useTranslation, t } from '../utils/i18n';
 
 // Safe localStorage utility to handle quota exceeded errors
 const safeLocalStorage = {
@@ -211,7 +212,7 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                       </svg>
                     </div>
                     <span className="font-medium text-blue-900 dark:text-blue-100">
-                      Using {message.toolName}
+                      Using {message.toolName === 'Task' ? 'Subagent' : message.toolName}
                     </span>
                     <span className="text-xs text-blue-600 dark:text-blue-400 font-mono">
                       {message.toolId}
@@ -521,6 +522,50 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                       }
                     } catch (e) {
                       // Fall back to regular display
+                    }
+                  }
+                  
+                  // Special handling for Task tool (subagent calls)
+                  if (message.toolName === 'Task') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.subagent_type && input.description && input.prompt) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              🤖 Launching Subagent: {input.subagent_type.replace(/-/g, ' ')}
+                            </summary>
+                            <div className="mt-2 space-y-3">
+                              <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                                    {input.subagent_type.replace(/-/g, ' ')}
+                                  </span>
+                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                                    Subagent
+                                  </span>
+                                </div>
+                                <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                                  {input.description}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded border">
+                                <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase tracking-wide">
+                                  Task Instructions
+                                </div>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                  {input.prompt}
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Task input:', e);
                     }
                   }
                   
@@ -2532,13 +2577,16 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
               </svg>
             </button>
             
-            {/* Mic button - HIDDEN */}
-            <div className="absolute right-16 sm:right-16 top-1/2 transform -translate-y-1/2" style={{ display: 'none' }}>
-              <MicButton 
-                onTranscript={handleTranscript}
-                className="w-10 h-10 sm:w-10 sm:h-10"
-              />
-            </div>
+            {/* Voice Input button */}
+            {JSON.parse(localStorage.getItem('voiceInputEnabled') || 'true') && (
+              <div className="absolute right-14 top-1/2 transform -translate-y-1/2">
+                <VoiceInput 
+                  onTranscript={handleTranscript}
+                  language={localStorage.getItem('speechRecognitionLanguage') || 'en-US'}
+                  className="chat-action-button"
+                />
+              </div>
+            )}
             {/* Send button */}
             <button
               type="submit"
@@ -2551,7 +2599,7 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
                 e.preventDefault();
                 handleSubmit(e);
               }}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-12 h-12 sm:w-12 sm:h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:ring-offset-gray-800"
+              className="chat-action-button primary absolute right-2 top-1/2 transform -translate-y-1/2"
             >
               <svg 
                 className="w-4 h-4 sm:w-5 sm:h-5 text-white transform rotate-90" 

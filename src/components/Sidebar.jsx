@@ -3,8 +3,9 @@ import { ScrollArea } from './ui/scroll-area';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { t } from '../utils/i18n';
 
-import { FolderOpen, Folder, Plus, MessageSquare, Clock, ChevronDown, ChevronRight, Edit3, Check, X, Trash2, Settings, FolderPlus, RefreshCw, Sparkles, Edit2, Star, Search } from 'lucide-react';
+import { FolderOpen, Folder, Plus, MessageSquare, Clock, ChevronDown, ChevronRight, ChevronLeft, Edit3, Check, X, Trash2, Settings, FolderPlus, RefreshCw, Sparkles, Edit2, Star, Search } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ClaudeLogo from './ClaudeLogo';
 import { api } from '../utils/api';
@@ -50,7 +51,9 @@ function Sidebar({
   updateAvailable,
   latestVersion,
   currentVersion,
-  onShowVersionModal
+  onShowVersionModal,
+  isCollapsed = false,
+  onToggleCollapse
 }) {
   const [expandedProjects, setExpandedProjects] = useState(new Set());
   const [editingProject, setEditingProject] = useState(null);
@@ -414,48 +417,32 @@ function Sidebar({
   });
 
   return (
-    <div className="h-full flex flex-col bg-card md:select-none">
+    <div className={cn(
+      "h-full flex flex-col bg-card md:select-none",
+      isCollapsed && "overflow-x-hidden"
+    )}>
       {/* Header */}
       <div className="md:p-4 md:border-b md:border-border">
         {/* Desktop Header */}
         <div className="hidden md:flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-              <MessageSquare className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">Claude Code UI</h1>
-              <p className="text-sm text-muted-foreground">AI coding assistant interface</p>
-            </div>
+          <div className={cn("flex items-center gap-3", isCollapsed && "justify-center w-full")}>
+            {!isCollapsed && (
+              <>
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                  <MessageSquare className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-foreground">Claude Code UI</h1>
+                </div>
+              </>
+            )}
+            {isCollapsed && (
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                <MessageSquare className="w-4 h-4 text-primary-foreground" />
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 px-0 hover:bg-accent transition-colors duration-200 group"
-              onClick={async () => {
-                setIsRefreshing(true);
-                try {
-                  await onRefresh();
-                } finally {
-                  setIsRefreshing(false);
-                }
-              }}
-              disabled={isRefreshing}
-              title="Refresh projects and sessions (Ctrl+R)"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''} group-hover:rotate-180 transition-transform duration-300`} />
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="h-9 w-9 px-0 bg-primary hover:bg-primary/90 transition-all duration-200 shadow-sm hover:shadow-md"
-              onClick={() => setShowNewProject(true)}
-              title="Create new project (Ctrl+N)"
-            >
-              <FolderPlus className="w-4 h-4" />
-            </Button>
-          </div>
+          {!isCollapsed && <div className="flex-1" />}
         </div>
         
         {/* Mobile Header */}
@@ -467,7 +454,7 @@ function Sidebar({
               </div>
               <div>
                 <h1 className="text-lg font-semibold text-foreground">Claude Code UI</h1>
-                <p className="text-sm text-muted-foreground">Projects</p>
+                <p className="text-sm text-muted-foreground">{t('projects')}</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -523,7 +510,7 @@ function Sidebar({
                 disabled={!newProjectPath.trim() || creatingProject}
                 className="flex-1 h-8 text-xs hover:bg-primary/90 transition-colors"
               >
-                {creatingProject ? 'Creating...' : 'Create Project'}
+                {creatingProject ? t('creating') : t('createProject')}
               </Button>
               <Button
                 size="sm"
@@ -598,7 +585,7 @@ function Sidebar({
       )}
       
       {/* Search Filter */}
-      {projects.length > 0 && !isLoading && (
+      {projects.length > 0 && !isLoading && !isCollapsed && (
         <div className="px-3 md:px-4 py-2 border-b border-border">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -622,14 +609,20 @@ function Sidebar({
       )}
       
       {/* Projects List */}
-      <ScrollArea className="flex-1 md:px-2 md:py-3 overflow-y-auto overscroll-contain">
-        <div className="md:space-y-1 pb-safe-area-inset-bottom">
+      <ScrollArea className={cn(
+        "flex-1 md:px-2 md:py-3 overflow-y-auto overscroll-contain",
+        isCollapsed && "overflow-x-hidden"
+      )}>
+        <div className={cn(
+          "md:space-y-1 pb-safe-area-inset-bottom",
+          isCollapsed && "overflow-x-hidden"
+        )}>
           {isLoading ? (
             <div className="text-center py-12 md:py-8 px-4">
               <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4 md:mb-3">
                 <div className="w-6 h-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
               </div>
-              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">Loading projects...</h3>
+              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">{t('loadingProjects')}</h3>
               <p className="text-sm text-muted-foreground">
                 Fetching your Claude projects and sessions
               </p>
@@ -639,7 +632,7 @@ function Sidebar({
               <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4 md:mb-3">
                 <Folder className="w-6 h-6 text-muted-foreground" />
               </div>
-              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">No projects found</h3>
+              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">{t('noProjectsFound')}</h3>
               <p className="text-sm text-muted-foreground">
                 Run Claude CLI in a project directory to get started
               </p>
@@ -649,7 +642,7 @@ function Sidebar({
               <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4 md:mb-3">
                 <Search className="w-6 h-6 text-muted-foreground" />
               </div>
-              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">No matching projects</h3>
+              <h3 className="text-base font-medium text-foreground mb-2 md:mb-1">{t('noMatchingProjects')}</h3>
               <p className="text-sm text-muted-foreground">
                 Try adjusting your search term
               </p>
@@ -814,7 +807,8 @@ function Sidebar({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "hidden md:flex w-full justify-between p-2 h-auto font-normal hover:bg-accent/50",
+                        "hidden md:flex w-full p-2 h-auto font-normal hover:bg-accent/50 relative group",
+                        isCollapsed ? "justify-center" : "justify-between",
                         isSelected && "bg-accent text-accent-foreground",
                         isStarred && !isSelected && "bg-yellow-50/50 dark:bg-yellow-900/10 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/20"
                       )}
@@ -833,53 +827,70 @@ function Sidebar({
                       })}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {isExpanded ? (
-                          <FolderOpen className="w-4 h-4 text-primary flex-shrink-0" />
+                        {!isCollapsed ? (
+                          // Normal view with folder icon
+                          <>
+                            {isExpanded ? (
+                              <FolderOpen className="w-4 h-4 text-primary flex-shrink-0" />
+                            ) : (
+                              <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            )}
+                          </>
                         ) : (
-                          <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          // Collapsed view with first letter avatar
+                          <div 
+                            className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0"
+                          >
+                            <span className="text-sm font-semibold text-primary">
+                              {project.displayName.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
                         )}
                         <div className="min-w-0 flex-1 text-left">
-                          {editingProject === project.name ? (
-                            <div className="space-y-1">
-                              <input
-                                type="text"
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:ring-2 focus:ring-primary/20"
-                                placeholder="Project name"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') saveProjectName(project.name);
-                                  if (e.key === 'Escape') cancelEditing();
-                                }}
-                              />
-                              <div className="text-xs text-muted-foreground truncate" title={project.fullPath}>
-                                {project.fullPath}
+                          {!isCollapsed && (
+                            editingProject === project.name ? (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) => setEditingName(e.target.value)}
+                                  className="w-full px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:ring-2 focus:ring-primary/20"
+                                  placeholder="Project name"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveProjectName(project.name);
+                                    if (e.key === 'Escape') cancelEditing();
+                                  }}
+                                />
+                                <div className="text-xs text-muted-foreground truncate" title={project.fullPath}>
+                                  {project.fullPath}
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="text-sm font-semibold truncate text-foreground" title={project.displayName}>
-                                {project.displayName}
+                            ) : (
+                              <div>
+                                <div className="text-sm font-semibold truncate text-foreground" title={project.displayName}>
+                                  {project.displayName}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {(() => {
+                                    const sessionCount = getAllSessions(project).length;
+                                    const hasMore = project.sessionMeta?.hasMore !== false;
+                                    return hasMore && sessionCount >= 5 ? `${sessionCount}+` : sessionCount;
+                                  })()}
+                                  {project.fullPath !== project.displayName && (
+                                    <span className="ml-1 opacity-60" title={project.fullPath}>
+                                      • {project.fullPath.length > 25 ? '...' + project.fullPath.slice(-22) : project.fullPath}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {(() => {
-                                  const sessionCount = getAllSessions(project).length;
-                                  const hasMore = project.sessionMeta?.hasMore !== false;
-                                  return hasMore && sessionCount >= 5 ? `${sessionCount}+` : sessionCount;
-                                })()}
-                                {project.fullPath !== project.displayName && (
-                                  <span className="ml-1 opacity-60" title={project.fullPath}>
-                                    • {project.fullPath.length > 25 ? '...' + project.fullPath.slice(-22) : project.fullPath}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                            )
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      {!isCollapsed && (
+                        <div className="flex items-center gap-1 flex-shrink-0">
                         {editingProject === project.name ? (
                           <>
                             <div
@@ -930,7 +941,7 @@ function Sidebar({
                                 e.stopPropagation();
                                 startEditing(project);
                               }}
-                              title="Rename project (F2)"
+                              title={t('renameProject')}
                             >
                               <Edit3 className="w-3 h-3" />
                             </div>
@@ -941,7 +952,7 @@ function Sidebar({
                                   e.stopPropagation();
                                   deleteProject(project.name);
                                 }}
-                                title="Delete empty project (Delete)"
+                                title={t('deleteEmptyProject')}
                               >
                                 <Trash2 className="w-3 h-3 text-red-600 dark:text-red-400" />
                               </div>
@@ -953,12 +964,23 @@ function Sidebar({
                             )}
                           </>
                         )}
-                      </div>
+                        </div>
+                      )}
+                      
+                      {/* Tooltip for collapsed state */}
+                      {isCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground rounded-md shadow-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap hidden group-hover:block">
+                          <div className="text-sm font-medium">{project.displayName}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {getAllSessions(project).length} session(s)
+                          </div>
+                        </div>
+                      )}
                     </Button>
                   </div>
 
                   {/* Sessions List */}
-                  {isExpanded && (
+                  {isExpanded && !isCollapsed && (
                     <div className="ml-3 space-y-1 border-l border-border pl-3">
                       {!initialSessionsLoaded.has(project.name) ? (
                         // Loading skeleton for sessions
@@ -1108,7 +1130,7 @@ function Sidebar({
                                         e.stopPropagation();
                                         updateSessionSummary(project.name, session.id, editingSessionName);
                                       }}
-                                      title="Save"
+                                      title={t('save')}
                                     >
                                       <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
                                     </button>
@@ -1119,7 +1141,7 @@ function Sidebar({
                                         setEditingSession(null);
                                         setEditingSessionName('');
                                       }}
-                                      title="Cancel"
+                                      title={t('cancel')}
                                     >
                                       <X className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                                     </button>
@@ -1133,7 +1155,7 @@ function Sidebar({
                                         e.stopPropagation();
                                         generateSessionSummary(project.name, session.id);
                                       }}
-                                      title="Generate AI summary for this session"
+                                      title={t('generateAiSummary')}
                                       disabled={generatingSummary[`${project.name}-${session.id}`]}
                                     >
                                       {generatingSummary[`${project.name}-${session.id}`] ? (
@@ -1150,7 +1172,7 @@ function Sidebar({
                                         setEditingSession(session.id);
                                         setEditingSessionName(session.summary || 'New Session');
                                       }}
-                                      title="Manually edit session name"
+                                      title={t('manuallyEditSession')}
                                     >
                                       <Edit2 className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                                     </button>
@@ -1161,7 +1183,7 @@ function Sidebar({
                                         e.stopPropagation();
                                         deleteSession(project.name, session.id);
                                       }}
-                                      title="Delete this session permanently"
+                                      title={t('deleteSessionPermanently')}
                                     >
                                       <Trash2 className="w-3 h-3 text-red-600 dark:text-red-400" />
                                     </button>
@@ -1246,7 +1268,7 @@ function Sidebar({
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-blue-700 dark:text-blue-300">Update Available</div>
+                <div className="text-sm font-medium text-blue-700 dark:text-blue-300">{t('updateAvailable')}</div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Version {latestVersion} is ready</div>
               </div>
             </Button>
@@ -1265,7 +1287,7 @@ function Sidebar({
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               </div>
               <div className="min-w-0 flex-1 text-left">
-                <div className="text-sm font-medium text-blue-700 dark:text-blue-300">Update Available</div>
+                <div className="text-sm font-medium text-blue-700 dark:text-blue-300">{t('updateAvailable')}</div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Version {latestVersion} is ready</div>
               </div>
             </button>
@@ -1273,8 +1295,68 @@ function Sidebar({
         </div>
       )}
       
-      {/* Settings Section */}
-      <div className="md:p-2 md:border-t md:border-border flex-shrink-0">
+      {/* Action Buttons and Settings Section */}
+      <div className="md:p-2 md:border-t md:border-border flex-shrink-0 md:space-y-1">
+        {/* Action Buttons - Desktop */}
+        <div className={cn(
+          "hidden md:flex",
+          isCollapsed ? "flex-col gap-1" : "gap-1"
+        )}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "hover:bg-accent transition-colors duration-200 group",
+              isCollapsed ? "h-9 w-full px-0 justify-center" : "h-9 px-3 flex-1"
+            )}
+            onClick={async () => {
+              setIsRefreshing(true);
+              try {
+                await onRefresh();
+              } finally {
+                setIsRefreshing(false);
+              }
+            }}
+            disabled={isRefreshing}
+            title={t('refreshProjectsSessions')}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''} group-hover:rotate-180 transition-transform duration-300`} />
+            {!isCollapsed && <span className="ml-2 text-xs">Refresh</span>}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "hover:bg-accent transition-colors duration-200",
+              isCollapsed ? "h-9 w-full px-0 justify-center" : "h-9 px-3 flex-1"
+            )}
+            onClick={() => setShowNewProject(true)}
+            title={t('createNewProject')}
+          >
+            <FolderPlus className="w-4 h-4" />
+            {!isCollapsed && <span className="ml-2 text-xs">New</span>}
+          </Button>
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "hover:bg-accent transition-colors duration-200",
+                isCollapsed ? "h-9 w-full px-0 justify-center" : "h-9 px-3 flex-1"
+              )}
+              onClick={onToggleCollapse}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!isCollapsed}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {!isCollapsed && <span className="ml-2 text-xs">Collapse</span>}
+            </Button>
+          )}
+        </div>
+        
+        {/* Settings Section */}
+        <div className="md:border-t md:border-border md:pt-1">
         {/* Mobile Settings */}
         <div className="md:hidden p-4 pb-20 border-t border-border/50">
           <button
@@ -1288,15 +1370,20 @@ function Sidebar({
           </button>
         </div>
         
-        {/* Desktop Settings */}
-        <Button
-          variant="ghost"
-          className="hidden md:flex w-full justify-start gap-2 p-2 h-auto font-normal text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200"
-          onClick={onShowSettings}
-        >
-          <Settings className="w-3 h-3" />
-          <span className="text-xs">Tools Settings</span>
-        </Button>
+          {/* Desktop Settings */}
+          <Button
+            variant="ghost"
+            className={cn(
+              "hidden md:flex w-full justify-start gap-2 p-2 h-auto font-normal text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200",
+              isCollapsed && "justify-center px-0"
+            )}
+            onClick={onShowSettings}
+            title={t('toolsSettings')}
+          >
+            <Settings className="w-3 h-3" />
+            {!isCollapsed && <span className="text-xs">Settings</span>}
+          </Button>
+        </div>
       </div>
     </div>
   );

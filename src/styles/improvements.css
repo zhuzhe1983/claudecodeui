@@ -1,0 +1,163 @@
+/* Global Improvements - Adjusted border radius and button styles */
+
+/* Reduce global border radius for more professional look */
+* {
+  --radius: 0.375rem; /* 6px instead of 8px */
+}
+
+/* Navigation Tabs - Enhanced contrast and visibility */
+.nav-tab-button {
+  position: relative;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-tab-button.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.nav-tab-button:not(.active) {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+.nav-tab-button:not(.active):hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Unified button styles for chat interface */
+.chat-action-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.chat-action-button:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent-foreground) / 0.2);
+  transform: scale(1.05);
+}
+
+.chat-action-button.primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+.chat-action-button.primary:hover {
+  background: hsl(var(--primary) / 0.9);
+  transform: scale(1.05);
+}
+
+.chat-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Enhanced navigation container */
+.nav-container {
+  background: hsl(var(--muted) / 0.5);
+  backdrop-filter: blur(10px);
+  padding: 0.25rem;
+  border-radius: calc(var(--radius) + 0.125rem);
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Adjusted rounded corners throughout the app */
+.rounded-lg {
+  border-radius: var(--radius) !important;
+}
+
+.rounded-md {
+  border-radius: calc(var(--radius) * 0.75) !important;
+}
+
+.rounded-sm {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.rounded-xl {
+  border-radius: calc(var(--radius) * 1.5) !important;
+}
+
+.rounded-2xl {
+  border-radius: calc(var(--radius) * 2) !important;
+}
+
+/* Monaco Editor specific styles */
+.monaco-editor-container {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* Image preview enhancements */
+.image-preview-container {
+  background: hsl(var(--muted) / 0.5);
+  border-radius: var(--radius);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.image-preview-container img {
+  max-width: 100%;
+  max-height: 600px;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Microphone permission dialog styles */
+.permission-dialog {
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.permission-dialog h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.permission-dialog p {
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.permission-dialog .warning-box {
+  background: hsl(var(--destructive) / 0.1);
+  border: 1px solid hsl(var(--destructive) / 0.2);
+  border-radius: calc(var(--radius) * 0.75);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.permission-dialog .warning-box p {
+  color: hsl(var(--destructive));
+  font-size: 0.875rem;
+  margin: 0;
+}

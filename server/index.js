@@ -497,9 +497,25 @@ function handleShellConnection(ws) {
       
       if (data.type === 'init') {
         // Initialize shell with project path and session info
-        const projectPath = data.projectPath || process.cwd();
+        let projectPath = data.projectPath || process.cwd();
         const sessionId = data.sessionId;
         const hasSession = data.hasSession;
+        
+        // Extract actual project directory from project name
+        try {
+          // If projectPath looks like a project name (encoded path), extract the real path
+          if (projectPath.includes('-')) {
+            const extracted = await extractProjectDirectory(projectPath);
+            if (extracted) {
+              projectPath = extracted;
+              console.log('📁 Extracted project path:', projectPath);
+            }
+          }
+        } catch (error) {
+          console.error('Error extracting project directory:', error);
+          // Fallback to decoding the project name
+          projectPath = projectPath.replace(/-/g, '/');
+        }
         
         console.log('🚀 Starting shell in:', projectPath);
         console.log('📋 Session info:', hasSession ? `Resume session ${sessionId}` : 'New session');
@@ -528,7 +544,7 @@ function handleShellConnection(ws) {
           
           console.log('🔧 Executing shell command:', shellCommand);
           
-          // Start shell using PTY for proper terminal emulation
+          // Start shell using PTY for proper terminal emulation (bash should be available after Docker fix)
           shellProcess = pty.spawn('bash', ['-c', shellCommand], {
             name: 'xterm-256color',
             cols: 80,
@@ -653,6 +669,87 @@ function handleShellConnection(ws) {
     console.error('❌ Shell WebSocket error:', error);
   });
 }
+// Agents API endpoint - Read all agent files from ~/.claude/agents
+app.get('/api/agents', authenticateToken, async (req, res) => {
+  try {
+    const agentsPath = path.join(process.env.HOME || os.homedir(), '.claude', 'agents');
+    
+    // Check if agents directory exists
+    try {
+      await fsPromises.access(agentsPath);
+    } catch (error) {
+      return res.status(404).json({ error: 'Agents directory not found' });
+    }
+    
+    const agentFiles = await fsPromises.readdir(agentsPath);
+    const agents = [];
+    
+    for (const fileName of agentFiles) {
+      if (!fileName.endsWith('.md')) continue;
+      
+      const filePath = path.join(agentsPath, fileName);
+      
+      try {
+        const content = await fsPromises.readFile(filePath, 'utf8');
+        const stats = await fsPromises.stat(filePath);
+        
+        // Parse frontmatter
+        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        let frontmatter = {};
+        let bodyContent = content;
+        
+        if (frontmatterMatch) {
+          const yamlContent = frontmatterMatch[1];
+          bodyContent = content.slice(frontmatterMatch[0].length);
+          
+          // Simple YAML parsing for frontmatter
+          yamlContent.split('\n').forEach(line => {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex > 0) {
+              const key = line.slice(0, colonIndex).trim();
+              const value = line.slice(colonIndex + 1).trim();
+              frontmatter[key] = value;
+            }
+          });
+        }
+        
+        // Extract categories from content (look for ## sections)
+        const categories = [];
+        const sectionMatches = bodyContent.match(/^## (.+)$/gm);
+        if (sectionMatches) {
+          categories.push(...sectionMatches.map(match => match.replace('## ', '')));
+        }
+        
+        agents.push({
+          fileName,
+          name: frontmatter.name || fileName.replace('.md', ''),
+          description: frontmatter.description || '',
+          model: frontmatter.model || 'sonnet',
+          categories,
+          content: bodyContent.trim(),
+          lastModified: stats.mtime.toISOString(),
+          size: stats.size
+        });
+      } catch (fileError) {
+        console.error(`Error reading agent file ${fileName}:`, fileError);
+        // Skip problematic files but continue processing others
+      }
+    }
+    
+    // Sort agents by name
+    agents.sort((a, b) => a.name.localeCompare(b.name));
+    
+    res.json({ 
+      agents,
+      totalCount: agents.length,
+      agentsPath
+    });
+  } catch (error) {
+    console.error('Error reading agents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Audio transcription endpoint
 app.post('/api/transcribe', authenticateToken, async (req, res) => {
   try {

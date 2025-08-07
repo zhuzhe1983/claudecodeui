@@ -18,6 +18,7 @@ import CodeEditor from './CodeEditor';
 import Shell from './Shell';
 import GitPanel from './GitPanel';
 import ErrorBoundary from './ErrorBoundary';
+import { t } from '../utils/i18n';
 
 function MainContent({ 
   selectedProject, 
@@ -87,8 +88,8 @@ function MainContent({
                 }} 
               />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Loading Claude Code UI</h2>
-            <p>Setting up your workspace...</p>
+            <h2 className="text-xl font-semibold mb-2">{t('loadingClaudeCodeUI')}</h2>
+            <p>{t('settingUpYourWorkspace')}</p>
           </div>
         </div>
       </div>
@@ -118,13 +119,13 @@ function MainContent({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold mb-3 text-gray-900 dark:text-white">Choose Your Project</h2>
+            <h2 className="text-2xl font-semibold mb-3 text-gray-900 dark:text-white">{t('chooseYourProject')}</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
               Select a project from the sidebar to start coding with Claude. Each project contains your chat sessions and file history.
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                💡 <strong>Tip:</strong> {isMobile ? 'Tap the menu button above to access projects' : 'Create a new project by clicking the folder icon in the sidebar'}
+                💡 <strong>Tip:</strong> {isMobile ? t('tipTapMenu') : t('tipCreateProject')}
               </p>
             </div>
           </div>
@@ -175,7 +176,7 @@ function MainContent({
               ) : (
                 <div>
                   <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                    {activeTab === 'files' ? 'Project Files' : activeTab === 'git' ? 'Source Control' : 'Project'}
+                    {activeTab === 'files' ? t('projectFiles') : activeTab === 'git' ? t('sourceControl') : t('project')}
                   </h2>
                   <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {selectedProject.displayName}
@@ -187,13 +188,11 @@ function MainContent({
           
           {/* Modern Tab Navigation - Right Side */}
           <div className="flex-shrink-0 hidden sm:block">
-            <div className="relative flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <div className="nav-container flex">
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`relative px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md ${
-                  activeTab === 'chat'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+                className={`nav-tab-button ${
+                  activeTab === 'chat' ? 'active' : ''
                 }`}
               >
                 <span className="flex items-center gap-1 sm:gap-1.5">
@@ -205,10 +204,8 @@ function MainContent({
               </button>
               <button
                 onClick={() => setActiveTab('shell')}
-                className={`relative px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'shell'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+                className={`nav-tab-button ${
+                  activeTab === 'shell' ? 'active' : ''
                 }`}
               >
                 <span className="flex items-center gap-1 sm:gap-1.5">
@@ -220,10 +217,8 @@ function MainContent({
               </button>
               <button
                 onClick={() => setActiveTab('files')}
-                className={`relative px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'files'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+                className={`nav-tab-button ${
+                  activeTab === 'files' ? 'active' : ''
                 }`}
               >
                 <span className="flex items-center gap-1 sm:gap-1.5">
@@ -235,10 +230,8 @@ function MainContent({
               </button>
               <button
                 onClick={() => setActiveTab('git')}
-                className={`relative px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'git'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+                className={`nav-tab-button ${
+                  activeTab === 'git' ? 'active' : ''
                 }`}
               >
                 <span className="flex items-center gap-1 sm:gap-1.5">

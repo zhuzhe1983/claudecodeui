@@ -1,0 +1,640 @@
+// Simple i18n implementation for Chinese support
+import React from 'react';
+
+const translations = {
+  en: {
+    // Common
+    cancel: 'Cancel',
+    save: 'Save',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    remove: 'Remove',
+    refresh: 'Refresh',
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    confirm: 'Confirm',
+    close: 'Close',
+    search: 'Search',
+    
+    // Navigation
+    chat: 'Chat',
+    files: 'Files',
+    shell: 'Shell',
+    git: 'Git',
+    projects: 'Projects',
+    sessions: 'Sessions',
+    
+    // Settings
+    settings: 'Settings',
+    general: 'General',
+    appearance: 'Appearance',
+    tools: 'Tools',
+    extensions: 'Extensions',
+    theme: 'Theme',
+    darkMode: 'Dark Mode',
+    toggleDarkMode: 'Toggle between light and dark themes',
+    display: 'Display',
+    autoExpandTools: 'Auto-expand tools',
+    autoExpandToolsDesc: 'Automatically expand tool details in chat',
+    showRawParameters: 'Show raw parameters',
+    showRawParametersDesc: 'Display raw JSON parameters for tool calls',
+    autoScrollToBottom: 'Auto-scroll to bottom',
+    autoScrollToBottomDesc: 'Automatically scroll to new messages',
+    input: 'Input',
+    sendByCtrlEnter: 'Send by Ctrl+Enter',
+    sendByCtrlEnterDesc: 'Use Ctrl+Enter to send messages (useful for multi-line input)',
+    sendByCtrlEnterNote: 'When enabled, pressing Ctrl+Enter will send the message instead of just Enter. This is useful for IME users to avoid accidental sends.',
+    projects: 'Projects',
+    projectSorting: 'Project Sorting',
+    projectSortingDesc: 'How projects are ordered in the sidebar',
+    alphabetical: 'Alphabetical',
+    recentActivity: 'Recent Activity',
+    saveSettings: 'Save Settings',
+    cancel: 'Cancel',
+    saving: 'Saving...',
+    settingsSavedSuccess: 'Settings saved successfully!',
+    failedToSaveSettings: 'Failed to save settings',
+    
+    // Tool Settings
+    permissionSettings: 'Permission Settings',
+    skipPermissionPrompts: 'Skip permission prompts (use with caution)',
+    skipPermissionDesc: 'Equivalent to --dangerously-skip-permissions flag',
+    allowedTools: 'Allowed Tools',
+    allowedToolsDesc: 'Tools that are automatically allowed without prompting for permission',
+    disallowedTools: 'Disallowed Tools',
+    disallowedToolsDesc: 'Tools that are automatically blocked without prompting for permission',
+    addTool: 'Add Tool',
+    quickAddCommonTools: 'Quick add common tools:',
+    noAllowedToolsConfigured: 'No allowed tools configured',
+    noDisallowedToolsConfigured: 'No disallowed tools configured',
+    toolPatternExamples: 'Tool Pattern Examples:',
+    
+    // MCP
+    mcpServers: 'MCP Servers',
+    mcpServersDesc: 'Model Context Protocol servers provide additional tools and data sources to Claude',
+    addMcpServer: 'Add MCP Server',
+    editMcpServer: 'Edit MCP Server',
+    noMcpServersConfigured: 'No MCP servers configured',
+    
+    // Voice Input
+    voiceInput: 'Voice Input',
+    voiceInputSettings: 'Voice Input Settings',
+    speechRecognitionLanguage: 'Speech Recognition Language',
+    speechRecognitionLanguageDesc: 'Select the language for voice recognition',
+    enableVoiceInput: 'Enable Voice Input',
+    voiceInputDesc: 'Allow voice input in chat interface',
+    startRecording: 'Start recording',
+    stopRecording: 'Stop recording',
+    microphonePermissionRequired: 'Microphone permission required',
+    microphonePermissionDesc: 'This app needs microphone access for voice input. Please allow microphone access in your browser settings.',
+    httpsRequired: 'HTTPS Connection Required',
+    httpsRequiredDesc: 'Microphone access requires a secure HTTPS connection. You are currently accessing via a local network IP address. Please use a domain name with HTTPS certificate or access via localhost.',
+    
+    // Auto refresh
+    autoRefresh: 'Auto Refresh',
+    autoRefreshProjects: 'Auto Refresh Projects',
+    autoRefreshProjectsDesc: 'Automatically refresh projects and sessions periodically',
+    refreshInterval: 'Refresh Interval',
+    refreshIntervalDesc: 'How often to refresh projects and sessions (in seconds)',
+    
+    // File operations
+    newFile: 'New File',
+    newFolder: 'New Folder',
+    rename: 'Rename',
+    download: 'Download',
+    upload: 'Upload',
+    copy: 'Copy',
+    paste: 'Paste',
+    cut: 'Cut',
+    selectAll: 'Select All',
+    
+    // Git operations  
+    commit: 'Commit',
+    push: 'Push',
+    pull: 'Pull',
+    branch: 'Branch',
+    merge: 'Merge',
+    checkout: 'Checkout',
+    status: 'Status',
+    diff: 'Diff',
+    log: 'Log',
+    stash: 'Stash',
+    
+    // Editor
+    fontSize: 'Font Size',
+    wordWrap: 'Word Wrap',
+    minimap: 'Minimap',
+    lineNumbers: 'Line Numbers',
+    formatDocument: 'Format Document',
+    findReplace: 'Find & Replace',
+    goToLine: 'Go to Line',
+    
+    // Status
+    connected: 'Connected',
+    disconnected: 'Disconnected',
+    connecting: 'Connecting...',
+    reconnecting: 'Reconnecting...',
+    online: 'Online',
+    offline: 'Offline',
+    syncing: 'Syncing...',
+    synced: 'Synced',
+    
+    // Editor specific
+    editorSettings: 'Editor settings',
+    copyToClipboard: 'Copy to clipboard',
+    downloadFile: 'Download file',
+    saveFile: 'Save (Ctrl+S)',
+    closeEditor: 'Close (Esc)',
+    loadingEditor: 'Loading editor...',
+    readOnly: 'Read-only',
+    modified: 'Modified',
+    saved: 'Saved',
+    untitled: 'Untitled',
+    lines: 'lines',
+    chars: 'chars',
+    
+    // Image viewer
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
+    rotate: 'Rotate',
+    
+    // Shell
+    disconnectFromShell: 'Disconnect from shell',
+    restartShell: 'Restart Shell (disconnect first)',
+    connectToShell: 'Connect to shell',
+    
+    // File tree
+    simpleView: 'Simple view',
+    compactView: 'Compact view',
+    detailedView: 'Detailed view',
+    noFilesFound: 'No files found',
+    checkProjectPath: 'Check if the project path is accessible',
+    name: 'Name',
+    size: 'Size',
+    modified: 'Modified',
+    permissions: 'Permissions',
+    
+    // Sidebar
+    renameProject: 'Rename project (F2)',
+    deleteEmptyProject: 'Delete empty project (Delete)',
+    generateAiSummary: 'Generate AI summary for this session',
+    manuallyEditSession: 'Manually edit session name',
+    deleteSessionPermanently: 'Delete this session permanently',
+    refreshProjectsSessions: 'Refresh projects and sessions (Ctrl+R)',
+    createNewProject: 'Create new project (Ctrl+N)',
+    toolsSettings: 'Tools Settings',
+    session: 'session',
+    sessions: 'sessions',
+    
+    // Chat
+    sendMessage: 'Send message',
+    typeMessage: 'Type your message...',
+    clearChat: 'Clear chat',
+    exportChat: 'Export chat',
+    
+    // Common actions
+    maximize: 'Maximize',
+    minimize: 'Minimize',
+    expand: 'Expand',
+    collapse: 'Collapse',
+    open: 'Open',
+    view: 'View',
+    preview: 'Preview',
+    apply: 'Apply',
+    reset: 'Reset',
+    back: 'Back',
+    forward: 'Forward',
+    
+    // File types
+    file: 'File',
+    folder: 'Folder',
+    directory: 'Directory',
+    
+    // Time
+    justNow: 'Just now',
+    minutesAgo: 'minutes ago',
+    hoursAgo: 'hours ago',
+    daysAgo: 'days ago',
+    weeksAgo: 'weeks ago',
+    monthsAgo: 'months ago',
+    
+    // Errors
+    errorLoadingFile: 'Error loading file',
+    errorSavingFile: 'Error saving file',
+    errorConnecting: 'Error connecting',
+    permissionDenied: 'Permission denied',
+    fileNotFound: 'File not found',
+    
+    // Success messages
+    fileSaved: 'File saved successfully',
+    fileDeleted: 'File deleted successfully',
+    projectCreated: 'Project created successfully',
+    sessionDeleted: 'Session deleted successfully',
+    
+    // Setup form
+    welcomeToClaudeCodeUI: 'Welcome to Claude Code UI',
+    enterYourUsername: 'Enter your username',
+    enterYourPassword: 'Enter your password',
+    confirmYourPassword: 'Confirm your password',
+    settingUp: 'Setting up...',
+    createAccount: 'Create Account',
+    
+    // Main content
+    loadingClaudeCodeUI: 'Loading Claude Code UI',
+    settingUpYourWorkspace: 'Setting up your workspace...',
+    chooseYourProject: 'Choose Your Project',
+    tipCreateProject: 'Create a new project by clicking the folder icon in the sidebar',
+    tipTapMenu: 'Tap the menu button above to access projects',
+    projectFiles: 'Project Files',
+    sourceControl: 'Source Control',
+    project: 'Project',
+    
+    // Sidebar states
+    loadingProjects: 'Loading projects...',
+    noProjectsFound: 'No projects found',
+    noMatchingProjects: 'No matching projects',
+    creating: 'Creating...',
+    createProject: 'Create Project',
+    updateAvailable: 'Update Available',
+    versionReady: 'Version {version} is ready',
+    
+    // Image viewer
+    loadingImage: 'Loading image...',
+    failedToLoadImage: 'Failed to load image',
+    
+    // Error boundary
+    errorOccurred: 'An error occurred while loading the chat interface.',
+    errorDetails: 'Error Details',
+    
+    // Languages
+    english: 'English',
+    chinese: '中文',
+    
+    // Settings tabs
+    toolsAndPermissions: 'Tools & Permissions',
+    subagents: 'Subagents',
+    
+    // Subagents
+    'settings.subagents.title': 'Subagent Management',
+    'settings.subagents.description': 'Showing {{filtered}} of {{total}} available subagents',
+    'settings.subagents.loading': 'Loading subagents...',
+    'settings.subagents.loadError': 'Failed to load subagents',
+    'settings.subagents.retry': 'Retry',
+    'settings.subagents.refresh': 'Refresh',
+    'settings.subagents.searchPlaceholder': 'Search subagents by name, description, or filename...',
+    'settings.subagents.filterModel': 'Model',
+    'settings.subagents.filterCategory': 'Category',
+    'settings.subagents.allModels': 'All Models',
+    'settings.subagents.allCategories': 'All Categories',
+    'settings.subagents.clearFilters': 'Clear Filters',
+    'settings.subagents.resultsCount': 'Showing {{count}} of {{total}} subagents',
+    'settings.subagents.noResults': 'No subagents found matching "{{query}}"',
+    'settings.subagents.noAgents': 'No subagents available',
+    'settings.subagents.lastModified': 'Last Modified',
+    'settings.subagents.fileSize': 'File Size',
+    'settings.subagents.categories': 'Categories',
+    'settings.subagents.content': 'Content',
+    'settings.subagents.pageInfo': 'Showing {{start}}-{{end}} of {{total}}',
+    'settings.subagents.previous': 'Previous',
+    'settings.subagents.next': 'Next',
+  },
+  zh: {
+    // Common
+    cancel: '取消',
+    save: '保存',
+    delete: '删除',
+    edit: '编辑',
+    add: '添加',
+    remove: '移除',
+    refresh: '刷新',
+    loading: '加载中...',
+    error: '错误',
+    success: '成功',
+    confirm: '确认',
+    close: '关闭',
+    search: '搜索',
+    
+    // Navigation
+    chat: '聊天',
+    files: '文件',
+    shell: '终端',
+    git: 'Git',
+    projects: '项目',
+    sessions: '会话',
+    
+    // Settings
+    settings: '设置',
+    general: '常规',
+    appearance: '外观',
+    tools: '工具',
+    extensions: '扩展',
+    theme: '主题',
+    darkMode: '深色模式',
+    toggleDarkMode: '在浅色和深色主题之间切换',
+    display: '显示',
+    autoExpandTools: '自动展开工具',
+    autoExpandToolsDesc: '自动展开聊天中的工具详情',
+    showRawParameters: '显示原始参数',
+    showRawParametersDesc: '显示工具调用的原始 JSON 参数',
+    autoScrollToBottom: '自动滚动到底部',
+    autoScrollToBottomDesc: '自动滚动到新消息',
+    input: '输入',
+    sendByCtrlEnter: '使用 Ctrl+Enter 发送',
+    sendByCtrlEnterDesc: '使用 Ctrl+Enter 发送消息（适用于多行输入）',
+    sendByCtrlEnterNote: '启用后，按 Ctrl+Enter 将发送消息而不是仅按 Enter。这对于输入法用户避免意外发送很有用。',
+    projects: '项目',
+    projectSorting: '项目排序',
+    projectSortingDesc: '侧边栏中项目的排序方式',
+    alphabetical: '按字母顺序',
+    recentActivity: '最近活动',
+    saveSettings: '保存设置',
+    cancel: '取消',
+    saving: '保存中...',
+    settingsSavedSuccess: '设置保存成功！',
+    failedToSaveSettings: '保存设置失败',
+    
+    // Tool Settings
+    permissionSettings: '权限设置',
+    skipPermissionPrompts: '跳过权限提示（谨慎使用）',
+    skipPermissionDesc: '相当于 --dangerously-skip-permissions 标志',
+    allowedTools: '允许的工具',
+    allowedToolsDesc: '无需提示权限即可自动允许的工具',
+    disallowedTools: '禁止的工具',
+    disallowedToolsDesc: '无需提示权限即可自动阻止的工具',
+    addTool: '添加工具',
+    quickAddCommonTools: '快速添加常用工具：',
+    noAllowedToolsConfigured: '未配置允许的工具',
+    noDisallowedToolsConfigured: '未配置禁止的工具',
+    toolPatternExamples: '工具模式示例：',
+    
+    // MCP
+    mcpServers: 'MCP 服务器',
+    mcpServersDesc: '模型上下文协议服务器为 Claude 提供额外的工具和数据源',
+    addMcpServer: '添加 MCP 服务器',
+    editMcpServer: '编辑 MCP 服务器',
+    noMcpServersConfigured: '未配置 MCP 服务器',
+    
+    // Voice Input
+    voiceInput: '语音输入',
+    voiceInputSettings: '语音输入设置',
+    speechRecognitionLanguage: '语音识别语言',
+    speechRecognitionLanguageDesc: '选择语音识别的语言',
+    enableVoiceInput: '启用语音输入',
+    voiceInputDesc: '允许在聊天界面使用语音输入',
+    startRecording: '开始录音',
+    stopRecording: '停止录音',
+    microphonePermissionRequired: '需要麦克风权限',
+    microphonePermissionDesc: '此应用需要麦克风权限才能使用语音输入功能。请在浏览器设置中允许麦克风访问。',
+    httpsRequired: '需要 HTTPS 连接',
+    httpsRequiredDesc: '麦克风访问需要安全的 HTTPS 连接。您当前通过局域网 IP 地址访问。请使用带有 HTTPS 证书的域名或通过 localhost 访问。',
+    
+    // 自动刷新
+    autoRefresh: '自动刷新',
+    autoRefreshProjects: '自动刷新项目',
+    autoRefreshProjectsDesc: '定期自动刷新项目和会话列表',
+    refreshInterval: '刷新间隔',
+    refreshIntervalDesc: '刷新项目和会话的时间间隔（秒）',
+    
+    // 文件操作
+    newFile: '新建文件',
+    newFolder: '新建文件夹',
+    rename: '重命名',
+    download: '下载',
+    upload: '上传',
+    copy: '复制',
+    paste: '粘贴',
+    cut: '剪切',
+    selectAll: '全选',
+    
+    // Git 操作
+    commit: '提交',
+    push: '推送',
+    pull: '拉取',
+    branch: '分支',
+    merge: '合并',
+    checkout: '检出',
+    status: '状态',
+    diff: '差异',
+    log: '日志',
+    stash: '暂存',
+    
+    // 编辑器
+    fontSize: '字体大小',
+    wordWrap: '自动换行',
+    minimap: '缩略图',
+    lineNumbers: '行号',
+    formatDocument: '格式化文档',
+    findReplace: '查找和替换',
+    goToLine: '跳转到行',
+    
+    // 状态
+    connected: '已连接',
+    disconnected: '已断开',
+    connecting: '连接中...',
+    reconnecting: '重新连接中...',
+    online: '在线',
+    offline: '离线',
+    syncing: '同步中...',
+    synced: '已同步',
+    
+    // 编辑器相关
+    editorSettings: '编辑器设置',
+    copyToClipboard: '复制到剪贴板',
+    downloadFile: '下载文件',
+    saveFile: '保存 (Ctrl+S)',
+    closeEditor: '关闭 (Esc)',
+    loadingEditor: '加载编辑器中...',
+    readOnly: '只读',
+    modified: '已修改',
+    saved: '已保存',
+    untitled: '未命名',
+    lines: '行',
+    chars: '字符',
+    
+    // 图片查看器
+    zoomOut: '缩小',
+    zoomIn: '放大',
+    rotate: '旋转',
+    
+    // 终端
+    disconnectFromShell: '断开终端连接',
+    restartShell: '重启终端（先断开连接）',
+    connectToShell: '连接到终端',
+    
+    // 文件树
+    simpleView: '简单视图',
+    compactView: '紧凑视图',
+    detailedView: '详细视图',
+    noFilesFound: '未找到文件',
+    checkProjectPath: '检查项目路径是否可访问',
+    name: '名称',
+    size: '大小',
+    modified: '修改时间',
+    permissions: '权限',
+    
+    // 侧边栏
+    renameProject: '重命名项目 (F2)',
+    deleteEmptyProject: '删除空项目 (Delete)',
+    generateAiSummary: '为此会话生成 AI 摘要',
+    manuallyEditSession: '手动编辑会话名称',
+    deleteSessionPermanently: '永久删除此会话',
+    refreshProjectsSessions: '刷新项目和会话 (Ctrl+R)',
+    createNewProject: '创建新项目 (Ctrl+N)',
+    toolsSettings: '工具设置',
+    session: '会话',
+    sessions: '会话',
+    
+    // 聊天
+    sendMessage: '发送消息',
+    typeMessage: '输入您的消息...',
+    clearChat: '清空聊天',
+    exportChat: '导出聊天',
+    
+    // 常用操作
+    maximize: '最大化',
+    minimize: '最小化',
+    expand: '展开',
+    collapse: '折叠',
+    open: '打开',
+    view: '查看',
+    preview: '预览',
+    apply: '应用',
+    reset: '重置',
+    back: '后退',
+    forward: '前进',
+    
+    // 文件类型
+    file: '文件',
+    folder: '文件夹',
+    directory: '目录',
+    
+    // 时间
+    justNow: '刚刚',
+    minutesAgo: '分钟前',
+    hoursAgo: '小时前',
+    daysAgo: '天前',
+    weeksAgo: '周前',
+    monthsAgo: '月前',
+    
+    // 错误
+    errorLoadingFile: '加载文件出错',
+    errorSavingFile: '保存文件出错',
+    errorConnecting: '连接出错',
+    permissionDenied: '权限被拒绝',
+    fileNotFound: '文件未找到',
+    
+    // 成功消息
+    fileSaved: '文件保存成功',
+    fileDeleted: '文件删除成功',
+    projectCreated: '项目创建成功',
+    sessionDeleted: '会话删除成功',
+    
+    // 设置表单
+    welcomeToClaudeCodeUI: '欢迎使用 Claude Code UI',
+    enterYourUsername: '输入您的用户名',
+    enterYourPassword: '输入您的密码',
+    confirmYourPassword: '确认您的密码',
+    settingUp: '设置中...',
+    createAccount: '创建账户',
+    
+    // 主内容
+    loadingClaudeCodeUI: '正在加载 Claude Code UI',
+    settingUpYourWorkspace: '正在设置您的工作区...',
+    chooseYourProject: '选择您的项目',
+    tipCreateProject: '点击侧边栏的文件夹图标创建新项目',
+    tipTapMenu: '点击上方菜单按钮访问项目',
+    projectFiles: '项目文件',
+    sourceControl: '源代码管理',
+    project: '项目',
+    
+    // 侧边栏状态
+    loadingProjects: '正在加载项目...',
+    noProjectsFound: '未找到项目',
+    noMatchingProjects: '没有匹配的项目',
+    creating: '创建中...',
+    createProject: '创建项目',
+    updateAvailable: '有可用更新',
+    versionReady: '版本 {version} 已就绪',
+    
+    // 图片查看器
+    loadingImage: '加载图片中...',
+    failedToLoadImage: '加载图片失败',
+    
+    // 错误边界
+    errorOccurred: '加载聊天界面时发生错误。',
+    errorDetails: '错误详情',
+    
+    // 语言
+    english: 'English',
+    chinese: '中文',
+    
+    // 设置标签页
+    toolsAndPermissions: '工具与权限',
+    subagents: '子代理',
+    
+    // 子代理
+    'settings.subagents.title': '子代理管理',
+    'settings.subagents.description': '显示 {{total}} 个可用子代理中的 {{filtered}} 个',
+    'settings.subagents.loading': '加载子代理中...',
+    'settings.subagents.loadError': '加载子代理失败',
+    'settings.subagents.retry': '重试',
+    'settings.subagents.refresh': '刷新',
+    'settings.subagents.searchPlaceholder': '按名称、描述或文件名搜索子代理...',
+    'settings.subagents.filterModel': '模型',
+    'settings.subagents.filterCategory': '分类',
+    'settings.subagents.allModels': '所有模型',
+    'settings.subagents.allCategories': '所有分类',
+    'settings.subagents.clearFilters': '清除筛选',
+    'settings.subagents.resultsCount': '显示 {{total}} 个子代理中的 {{count}} 个',
+    'settings.subagents.noResults': '未找到匹配 "{{query}}" 的子代理',
+    'settings.subagents.noAgents': '没有可用的子代理',
+    'settings.subagents.lastModified': '最后修改',
+    'settings.subagents.fileSize': '文件大小',
+    'settings.subagents.categories': '分类',
+    'settings.subagents.content': '内容',
+    'settings.subagents.pageInfo': '显示第 {{start}}-{{end}} 个，共 {{total}} 个',
+    'settings.subagents.previous': '上一页',
+    'settings.subagents.next': '下一页',
+  }
+};
+
+// Get current language from localStorage or default to 'en'
+export const getCurrentLanguage = () => {
+  return localStorage.getItem('language') || 'en';
+};
+
+// Set language
+export const setLanguage = (lang) => {
+  localStorage.setItem('language', lang);
+  window.dispatchEvent(new Event('languageChanged'));
+};
+
+// Translate function
+export const t = (key, params = {}) => {
+  const lang = getCurrentLanguage();
+  let translation = translations[lang]?.[key] || translations.en[key] || key;
+  
+  // Simple interpolation support for {{variable}} patterns
+  if (typeof translation === 'string' && params) {
+    Object.keys(params).forEach(param => {
+      translation = translation.replace(new RegExp(`\\{\\{${param}\\}\\}`, 'g'), params[param]);
+    });
+  }
+  
+  return translation;
+};
+
+// Hook for React components
+export const useTranslation = () => {
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
+  
+  React.useEffect(() => {
+    const handleLanguageChange = () => forceUpdate();
+    window.addEventListener('languageChanged', handleLanguageChange);
+    return () => window.removeEventListener('languageChanged', handleLanguageChange);
+  }, []);
+  
+  return { t, getCurrentLanguage, setLanguage };
+};

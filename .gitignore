@@ -105,3 +105,8 @@ temp/
 *.db
 *.sqlite
 *.sqlite3 
+# Secrets and API keys
+.secrets/
+*.key
+*_api_key
+.env.docker

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  claudecodeui:
+    build: 
+      context: .
+      args:
+        - NODE_ENV=${NODE_ENV:-production}
+    container_name: ${CONTAINER_NAME:-claudecodeui-app}
+    ports:
+      - "${EXTERNAL_PORT:-9998}:${PORT:-9999}"
+    env_file:
+      - .env.docker
+    environment:
+      # Core application environment
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-9999}
+      - VITE_PORT=${VITE_PORT:-9999}
+      - HOME=${CONTAINER_HOME:-/home/nodejs}
+      
+      # Database configuration
+      - DB_PATH=${DB_PATH:-./data/auth.db}
+      
+      # Authentication and security
+      - ENABLE_AUTH=${ENABLE_AUTH:-false}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_KEY=${API_KEY}
+      
+      # Shell and system
+      - DEFAULT_SHELL=${DEFAULT_SHELL:-bash}
+      - PATH=/usr/local/bin:/usr/bin:/bin:/home/nodejs/.local/bin
+      
+      # Application features
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DEFAULT_LANGUAGE=${DEFAULT_LANGUAGE:-en}
+      - ENABLE_VOICE_INPUT=${ENABLE_VOICE_INPUT:-true}
+      - ENABLE_MONACO_EDITOR=${ENABLE_MONACO_EDITOR:-true}
+      - ENABLE_GIT=${ENABLE_GIT:-true}
+      - ENABLE_SHELL=${ENABLE_SHELL:-true}
+      - ENABLE_FILE_BROWSER=${ENABLE_FILE_BROWSER:-true}
+      
+      # Claude Code - Uses mounted credentials from ~/.claude
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}  # Not needed with mounted credentials
+      
+      # Optional OpenAI for Voice Input transcription (Whisper)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # Network configuration
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
+    volumes:
+      # Mount for database persistence
+      - ./data:/app/data
+      # Mount Claude configuration and credentials (REQUIRED for Claude Code)
+      - ${CLAUDE_CONFIG_DIR:-~/.claude}:/home/nodejs/.claude:ro
+      # Mount user home directory to match host paths (read-only is fine)
+      - ${HOST_HOME:-~}:/home/zhuzhe:ro
+      # Mount workspace directory for project access (read-write for git operations)
+      - ${HOST_WORKSPACE:-~/Workspace}:/home/zhuzhe/Workspace
+      # Optional: Mount for custom certificates (for HTTPS)
+      # - ./certs:/app/certs:ro
+    restart: ${RESTART_POLICY:-unless-stopped}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${PORT:-9999}${HEALTH_CHECK_PATH:-/health}"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30}s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - claudecodeui-network
+    labels:
+      - "com.claudecodeui.version=1.5.0"
+      - "com.claudecodeui.description=Claude Code UI - AI-powered coding assistant"
+
+networks:
+  claudecodeui-network:
+    driver: bridge
+    name: claudecodeui-net

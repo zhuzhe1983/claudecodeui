@@ -3,11 +3,14 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
-import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun, Server, Edit3, Trash2, Play, Globe, Terminal, Zap } from 'lucide-react';
+import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun, Server, Edit3, Trash2, Play, Globe, Terminal, Zap, Eye, Languages, FolderOpen, Maximize2, ArrowDown, Keyboard, Mic, Bot } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from '../utils/i18n';
+import SubagentManager from './SubagentManager';
 
 function ToolsSettings({ isOpen, onClose }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { t, getCurrentLanguage, setLanguage } = useTranslation();
   const [allowedTools, setAllowedTools] = useState([]);
   const [disallowedTools, setDisallowedTools] = useState([]);
   const [newAllowedTool, setNewAllowedTool] = useState('');
@@ -16,6 +19,31 @@ function ToolsSettings({ isOpen, onClose }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [projectSortOrder, setProjectSortOrder] = useState('name');
+  
+  // Quick Settings states
+  const [autoExpandTools, setAutoExpandTools] = useState(() => {
+    const saved = localStorage.getItem('autoExpandTools');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [showRawParameters, setShowRawParameters] = useState(() => {
+    const saved = localStorage.getItem('showRawParameters');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [autoScrollToBottom, setAutoScrollToBottom] = useState(() => {
+    const saved = localStorage.getItem('autoScrollToBottom');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [sendByCtrlEnter, setSendByCtrlEnter] = useState(() => {
+    const saved = localStorage.getItem('sendByCtrlEnter');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [speechRecognitionLanguage, setSpeechRecognitionLanguage] = useState(() => {
+    return localStorage.getItem('speechRecognitionLanguage') || 'en-US';
+  });
+  const [voiceInputEnabled, setVoiceInputEnabled] = useState(() => {
+    const saved = localStorage.getItem('voiceInputEnabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   // MCP server management state
   const [mcpServers, setMcpServers] = useState([]);
@@ -41,7 +69,7 @@ function ToolsSettings({ isOpen, onClose }) {
   const [mcpConfigTested, setMcpConfigTested] = useState(false);
   const [mcpServerTools, setMcpServerTools] = useState({});
   const [mcpToolsLoading, setMcpToolsLoading] = useState({});
-  const [activeTab, setActiveTab] = useState('tools');
+  const [activeTab, setActiveTab] = useState('general');
 
   // Common tool patterns
   const commonTools = [
@@ -509,7 +537,7 @@ function ToolsSettings({ isOpen, onClose }) {
           <div className="flex items-center gap-3">
             <Settings className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
             <h2 className="text-lg md:text-xl font-semibold text-foreground">
-              Settings
+              {t('settings')}
             </h2>
           </div>
           <Button
@@ -527,6 +555,26 @@ function ToolsSettings({ isOpen, onClose }) {
           <div className="border-b border-border">
             <div className="flex px-4 md:px-6">
               <button
+                onClick={() => setActiveTab('general')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'general'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('general')}
+              </button>
+              <button
+                onClick={() => setActiveTab('display')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'display'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('display')}
+              </button>
+              <button
                 onClick={() => setActiveTab('tools')}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'tools'
@@ -534,90 +582,336 @@ function ToolsSettings({ isOpen, onClose }) {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Tools
+                {t('toolsAndPermissions')}
               </button>
               <button
-                onClick={() => setActiveTab('appearance')}
+                onClick={() => setActiveTab('subagents')}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'appearance'
+                  activeTab === 'subagents'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Appearance
+                {t('subagents')}
+              </button>
+              <button
+                onClick={() => setActiveTab('extensions')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'extensions'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('extensions')}
               </button>
             </div>
           </div>
 
           <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-safe-area-inset-bottom">
             
-            {/* Appearance Tab */}
-            {activeTab === 'appearance' && (
+            {/* General Tab */}
+            {activeTab === 'general' && (
               <div className="space-y-6 md:space-y-8">
-               {activeTab === 'appearance' && (
-  <div className="space-y-6 md:space-y-8">
-    {/* Theme Settings */}
-    <div className="space-y-4">
-      <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-foreground">
-              Dark Mode
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Toggle between light and dark themes
-            </div>
-          </div>
-          <button
-            onClick={toggleDarkMode}
-            className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-            role="switch"
-            aria-checked={isDarkMode}
-            aria-label="Toggle dark mode"
-          >
-            <span className="sr-only">Toggle dark mode</span>
-            <span
-              className={`${
-                isDarkMode ? 'translate-x-7' : 'translate-x-1'
-              } inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-200 flex items-center justify-center`}
-            >
-              {isDarkMode ? (
-                <Moon className="w-3.5 h-3.5 text-gray-700" />
-              ) : (
-                <Sun className="w-3.5 h-3.5 text-yellow-500" />
-              )}
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
+                {/* Appearance Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Sun className="w-5 h-5" />
+                    Appearance
+                  </h3>
+                  
+                  {/* Theme */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {t('darkMode')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {t('toggleDarkMode')}
+                        </div>
+                      </div>
+                      <button
+                        onClick={toggleDarkMode}
+                        className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                        role="switch"
+                        aria-checked={isDarkMode}
+                        aria-label="Toggle dark mode"
+                      >
+                        <span className="sr-only">Toggle dark mode</span>
+                        <span
+                          className={`${
+                            isDarkMode ? 'translate-x-7' : 'translate-x-1'
+                          } inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-200 flex items-center justify-center`}
+                        >
+                          {isDarkMode ? (
+                            <Moon className="w-3.5 h-3.5 text-gray-700" />
+                          ) : (
+                            <Sun className="w-3.5 h-3.5 text-yellow-500" />
+                          )}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Language */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          Interface Language / 界面语言
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          选择界面语言 / Choose interface language
+                        </div>
+                      </div>
+                      <select
+                        value={getCurrentLanguage()}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-32"
+                      >
+                        <option value="en">{t('english')}</option>
+                        <option value="zh">{t('chinese')}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
 
-    {/* Project Sorting */}
-    <div className="space-y-4">
-      <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-foreground">
-              Project Sorting
-            </div>
-            <div className="text-sm text-muted-foreground">
-              How projects are ordered in the sidebar
-            </div>
-          </div>
-          <select
-            value={projectSortOrder}
-            onChange={(e) => setProjectSortOrder(e.target.value)}
-            className="text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-32"
-          >
-            <option value="name">Alphabetical</option>
-            <option value="date">Recent Activity</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                {/* Interface Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Interface
+                  </h3>
 
+                  {/* Auto-scroll to bottom */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <ArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('autoScrollToBottom')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('autoScrollToBottomDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={autoScrollToBottom}
+                        onChange={(e) => {
+                          const value = e.target.checked;
+                          setAutoScrollToBottom(value);
+                          localStorage.setItem('autoScrollToBottom', JSON.stringify(value));
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+                  
+                  {/* Project Sorting */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {t('projectSorting')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {t('projectSortingDesc')}
+                        </div>
+                      </div>
+                      <select
+                        value={projectSortOrder}
+                        onChange={(e) => setProjectSortOrder(e.target.value)}
+                        className="text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2 w-32"
+                      >
+                        <option value="name">{t('alphabetical')}</option>
+                        <option value="date">{t('recentActivity')}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Input Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Keyboard className="w-5 h-5" />
+                    Input
+                  </h3>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Keyboard className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('sendByCtrlEnter')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('sendByCtrlEnterDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={sendByCtrlEnter}
+                        onChange={(e) => {
+                          const value = e.target.checked;
+                          setSendByCtrlEnter(value);
+                          localStorage.setItem('sendByCtrlEnter', JSON.stringify(value));
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-8">
+                      {t('sendByCtrlEnterNote')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Voice Input Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Mic className="w-5 h-5" />
+                    {t('voiceInput')}
+                  </h3>
+                  
+                  {/* Enable Voice Input */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Mic className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('enableVoiceInput')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('voiceInputDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={voiceInputEnabled}
+                        onChange={(e) => {
+                          const value = e.target.checked;
+                          setVoiceInputEnabled(value);
+                          localStorage.setItem('voiceInputEnabled', JSON.stringify(value));
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+                  
+                  {/* Speech Recognition Language */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Languages className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('speechRecognitionLanguage')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('speechRecognitionLanguageDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <select
+                        value={speechRecognitionLanguage}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setSpeechRecognitionLanguage(value);
+                          localStorage.setItem('speechRecognitionLanguage', value);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-gray-200"
+                      >
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="zh-CN">中文 (简体)</option>
+                        <option value="zh-TW">中文 (繁體)</option>
+                        <option value="ja-JP">日本語</option>
+                        <option value="ko-KR">한국어</option>
+                        <option value="es-ES">Español</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="de-DE">Deutsch</option>
+                        <option value="ru-RU">Русский</option>
+                        <option value="ar-SA">العربية</option>
+                        <option value="hi-IN">हिन्दी</option>
+                        <option value="pt-BR">Português (Brasil)</option>
+                        <option value="it-IT">Italiano</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Display Tab */}
+            {activeTab === 'display' && (
+              <div className="space-y-6 md:space-y-8">
+                {/* Tool Display Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Tool Display
+                  </h3>
+                  
+                  {/* Auto-expand tools */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Maximize2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('autoExpandTools')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('autoExpandToolsDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={autoExpandTools}
+                        onChange={(e) => {
+                          const value = e.target.checked;
+                          setAutoExpandTools(value);
+                          localStorage.setItem('autoExpandTools', JSON.stringify(value));
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Show raw parameters */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <div>
+                          <div className="font-medium text-foreground">
+                            {t('showRawParameters')}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {t('showRawParametersDesc')}
+                          </div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={showRawParameters}
+                        onChange={(e) => {
+                          const value = e.target.checked;
+                          setShowRawParameters(value);
+                          localStorage.setItem('showRawParameters', JSON.stringify(value));
+                        }}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -625,12 +919,12 @@ function ToolsSettings({ isOpen, onClose }) {
             {activeTab === 'tools' && (
               <div className="space-y-6 md:space-y-8">
             
-            {/* Skip Permissions */}
+            {/* Permission Settings */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
                 <h3 className="text-lg font-medium text-foreground">
-                  Permission Settings
+                  {t('permissionSettings')}
                 </h3>
               </div>
               <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
@@ -643,10 +937,10 @@ function ToolsSettings({ isOpen, onClose }) {
                   />
                   <div>
                     <div className="font-medium text-orange-900 dark:text-orange-100">
-                      Skip permission prompts (use with caution)
+                      {t('skipPermissionPrompts')}
                     </div>
                     <div className="text-sm text-orange-700 dark:text-orange-300">
-                      Equivalent to --dangerously-skip-permissions flag
+                      {t('skipPermissionDesc')}
                     </div>
                   </div>
                 </label>
@@ -658,11 +952,11 @@ function ToolsSettings({ isOpen, onClose }) {
               <div className="flex items-center gap-3">
                 <Shield className="w-5 h-5 text-green-500" />
                 <h3 className="text-lg font-medium text-foreground">
-                  Allowed Tools
+                  {t('allowedTools')}
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground">
-                Tools that are automatically allowed without prompting for permission
+                {t('allowedToolsDesc')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-2">
@@ -808,7 +1102,20 @@ function ToolsSettings({ isOpen, onClose }) {
               </ul>
             </div>
 
-            {/* MCP Server Management */}
+              </div>
+            )}
+            
+            {/* Subagents Tab */}
+            {activeTab === 'subagents' && (
+              <div className="space-y-6 md:space-y-8">
+                <SubagentManager />
+              </div>
+            )}
+            
+            {/* Extensions Tab */}
+            {activeTab === 'extensions' && (
+              <div className="space-y-6 md:space-y-8">
+                {/* MCP Server Management */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Server className="w-5 h-5 text-purple-500" />
@@ -1007,6 +1314,8 @@ function ToolsSettings({ isOpen, onClose }) {
                 )}
               </div>
             </div>
+              </div>
+            )}
 
             {/* MCP Server Form Modal */}
             {showMcpForm && (
@@ -1232,8 +1541,6 @@ function ToolsSettings({ isOpen, onClose }) {
                 </div>
               </div>
             )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1244,7 +1551,7 @@ function ToolsSettings({ isOpen, onClose }) {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                Settings saved successfully!
+                {t('settingsSavedSuccess')}
               </div>
             )}
             {saveStatus === 'error' && (
@@ -1252,7 +1559,7 @@ function ToolsSettings({ isOpen, onClose }) {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                Failed to save settings
+                {t('failedToSaveSettings')}
               </div>
             )}
           </div>
@@ -1263,7 +1570,7 @@ function ToolsSettings({ isOpen, onClose }) {
               disabled={isSaving}
               className="flex-1 sm:flex-none h-10 touch-manipulation"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button 
               onClick={saveSettings} 
@@ -1273,10 +1580,10 @@ function ToolsSettings({ isOpen, onClose }) {
               {isSaving ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Saving...
+                  {t('saving')}
                 </div>
               ) : (
-                'Save Settings'
+                t('saveSettings')
               )}
             </Button>
           </div>
