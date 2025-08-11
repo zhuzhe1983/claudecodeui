@@ -70,6 +70,23 @@ function ToolsSettings({ isOpen, onClose }) {
   const [mcpServerTools, setMcpServerTools] = useState({});
   const [mcpToolsLoading, setMcpToolsLoading] = useState({});
   const [activeTab, setActiveTab] = useState('general');
+  
+  // Usage metrics settings
+  const [usageMetricsSettings, setUsageMetricsSettings] = useState(() => {
+    const saved = localStorage.getItem('usageMetricsSettings');
+    return saved ? JSON.parse(saved) : {
+      showInSidebar: true,
+      showIcons: true,
+      refreshInterval: 30000,
+      displayOptions: {
+        todaySpend: true,
+        weekSpend: false,
+        monthSpend: true,
+        rateLimitRemaining: true,
+        tokensPerMinute: false
+      }
+    };
+  });
 
   // Common tool patterns
   const commonTools = [
@@ -603,6 +620,16 @@ function ToolsSettings({ isOpen, onClose }) {
                 }`}
               >
                 {t('extensions')}
+              </button>
+              <button
+                onClick={() => setActiveTab('usage')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'usage'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('usage.title')}
               </button>
             </div>
           </div>
@@ -1538,6 +1565,219 @@ function ToolsSettings({ isOpen, onClose }) {
                       </Button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+            
+            {/* Usage Tab */}
+            {activeTab === 'usage' && (
+              <div className="space-y-6 md:space-y-8">
+                {/* Usage Metrics Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-foreground flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-yellow-500" />
+                    {t('usage.title')}
+                  </h3>
+                  
+                  {/* Show in sidebar */}
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {t('usage.showInSidebar')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {t('usage.metricsToShow')}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newSettings = {
+                            ...usageMetricsSettings,
+                            showInSidebar: !usageMetricsSettings.showInSidebar
+                          };
+                          setUsageMetricsSettings(newSettings);
+                          localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                          window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                        }}
+                        className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                        role="switch"
+                        aria-checked={usageMetricsSettings.showInSidebar}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform duration-200 ${
+                            usageMetricsSettings.showInSidebar ? 'translate-x-7' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Metrics display options */}
+                  {usageMetricsSettings.showInSidebar && (
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
+                        {/* Today's spend */}
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-sm text-foreground">{t('usage.showTodaySpend')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.displayOptions.todaySpend}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                displayOptions: {
+                                  ...usageMetricsSettings.displayOptions,
+                                  todaySpend: e.target.checked
+                                }
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Week's spend */}
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-sm text-foreground">{t('usage.showWeekSpend')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.displayOptions.weekSpend}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                displayOptions: {
+                                  ...usageMetricsSettings.displayOptions,
+                                  weekSpend: e.target.checked
+                                }
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Month's spend */}
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-sm text-foreground">{t('usage.showMonthSpend')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.displayOptions.monthSpend}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                displayOptions: {
+                                  ...usageMetricsSettings.displayOptions,
+                                  monthSpend: e.target.checked
+                                }
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Rate limit */}
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-sm text-foreground">{t('usage.showRateLimit')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.displayOptions.rateLimitRemaining}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                displayOptions: {
+                                  ...usageMetricsSettings.displayOptions,
+                                  rateLimitRemaining: e.target.checked
+                                }
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Tokens per minute */}
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-sm text-foreground">{t('usage.showTPM')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.displayOptions.tokensPerMinute}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                displayOptions: {
+                                  ...usageMetricsSettings.displayOptions,
+                                  tokensPerMinute: e.target.checked
+                                }
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Show icons */}
+                        <label className="flex items-center justify-between cursor-pointer pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <span className="text-sm text-foreground">{t('usage.showIcons')}</span>
+                          <input
+                            type="checkbox"
+                            checked={usageMetricsSettings.showIcons}
+                            onChange={(e) => {
+                              const newSettings = {
+                                ...usageMetricsSettings,
+                                showIcons: e.target.checked
+                              };
+                              setUsageMetricsSettings(newSettings);
+                              localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                              window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </label>
+                        
+                        {/* Auto refresh interval */}
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <label className="flex items-center justify-between">
+                            <div>
+                              <span className="text-sm text-foreground">{t('refreshInterval')}</span>
+                              <div className="text-xs text-muted-foreground">{t('refreshIntervalDesc')}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="10"
+                                max="300"
+                                value={Math.round(usageMetricsSettings.refreshInterval / 1000)}
+                                onChange={(e) => {
+                                  const seconds = Math.max(10, Math.min(300, parseInt(e.target.value) || 30));
+                                  const newSettings = {
+                                    ...usageMetricsSettings,
+                                    refreshInterval: seconds * 1000
+                                  };
+                                  setUsageMetricsSettings(newSettings);
+                                  localStorage.setItem('usageMetricsSettings', JSON.stringify(newSettings));
+                                  window.dispatchEvent(new Event('usageMetricsSettingsChanged'));
+                                }}
+                                className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                              />
+                              <span className="text-xs text-muted-foreground">s</span>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

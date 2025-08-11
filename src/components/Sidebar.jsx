@@ -9,6 +9,7 @@ import { FolderOpen, Folder, Plus, MessageSquare, Clock, ChevronDown, ChevronRig
 import { cn } from '../lib/utils';
 import ClaudeLogo from './ClaudeLogo';
 import { api } from '../utils/api';
+import UsageMetrics from './UsageMetrics';
 
 // Move formatTimeAgo outside component to avoid recreation on every render
 const formatTimeAgo = (dateString, currentTime) => {
@@ -71,6 +72,29 @@ function Sidebar({
   const [editingSessionName, setEditingSessionName] = useState('');
   const [generatingSummary, setGeneratingSummary] = useState({});
   const [searchFilter, setSearchFilter] = useState('');
+  const [usageMetricsSettings, setUsageMetricsSettings] = useState(() => {
+    const saved = localStorage.getItem('usageMetricsSettings');
+    return saved ? JSON.parse(saved) : { showInSidebar: true };
+  });
+  
+  // Listen for settings changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('usageMetricsSettings');
+      if (saved) {
+        setUsageMetricsSettings(JSON.parse(saved));
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    // Also listen for custom events from the same window
+    window.addEventListener('usageMetricsSettingsChanged', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('usageMetricsSettingsChanged', handleStorageChange);
+    };
+  }, []);
 
   
   // Starred projects state - persisted in localStorage
@@ -442,7 +466,11 @@ function Sidebar({
               </div>
             )}
           </div>
-          {!isCollapsed && <div className="flex-1" />}
+          {!isCollapsed && usageMetricsSettings?.showInSidebar !== false && (
+            <div className="flex-1">
+              <UsageMetrics settings={{ usageMetrics: usageMetricsSettings }} />
+            </div>
+          )}
         </div>
         
         {/* Mobile Header */}

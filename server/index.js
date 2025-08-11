@@ -43,6 +43,7 @@ import authRoutes from './routes/auth.js';
 import mcpRoutes from './routes/mcp.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
+import UsageAnalyzer from './usageAnalyzer.js';
 
 // File system watcher for projects folder
 let projectsWatcher = null;
@@ -746,6 +747,44 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error reading agents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Initialize usage analyzer
+const usageAnalyzer = new UsageAnalyzer();
+
+// Usage API endpoints
+app.get('/api/usage/summary', authenticateToken, async (req, res) => {
+  try {
+    const summary = await usageAnalyzer.getSummary();
+    res.json(summary);
+  } catch (error) {
+    console.error('Error getting usage summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/usage/detailed', authenticateToken, async (req, res) => {
+  try {
+    const { tab, range, project } = req.query;
+    const detailed = await usageAnalyzer.getDetailed(tab, range, project);
+    
+    // Add credentials information for billing tab
+    if (tab === 'billing') {
+      const credentials = await usageAnalyzer.getCredentials();
+      if (credentials?.claudeAiOauth) {
+        detailed.credentials = {
+          subscriptionType: credentials.claudeAiOauth.subscriptionType,
+          tokenExpiresAt: credentials.claudeAiOauth.expiresAt,
+          scopes: credentials.claudeAiOauth.scopes
+        };
+      }
+    }
+    
+    res.json(detailed);
+  } catch (error) {
+    console.error('Error getting detailed usage:', error);
     res.status(500).json({ error: error.message });
   }
 });

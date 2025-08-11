@@ -40,7 +40,19 @@ A desktop and mobile UI for [Claude Code](https://docs.anthropic.com/en/docs/cla
 - **Git Explorer** - View, stage and commit your changes. You can also switch branches 
 - **Session Management** - Resume conversations, manage multiple sessions, and track history
 
-## 🎉 Latest Updates (v1.5.0)
+## 🎉 Latest Updates (v1.5.1)
+
+### 📊 Enhanced Usage Analytics
+- **Comprehensive Token Tracking** - Detailed breakdown of input, output, cache creation, and cache read tokens
+- **Smart Number Formatting** - Automatic K/M unit conversion for large token counts (e.g., 1.2M, 450K)
+- **Interactive Charts** - Toggle data series visibility with clickable legends, cache data hidden by default
+- **Subscription Integration** - Display Claude Max subscription status and OAuth token expiry from local credentials
+- **Improved Layout** - Wider modal (1400px), optimized heights for summary cards, calendar, and charts
+- **Billing Tab** - Real-time subscription info, token status tracking, and permission scopes display
+- **Accurate Cost Calculation** - Aligned with ccusage tool using exact Anthropic pricing formulas
+- **Multi-Tab Analytics** - Sessions, Models, and Billing tabs with comprehensive usage insights
+
+## 🎉 Previous Updates (v1.5.0)
 
 ### 🤖 Subagent Management System
 - **Browse Claude Code Agents** - View and search through all 60+ available Claude Code subagents

@@ -212,7 +212,20 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                       </svg>
                     </div>
                     <span className="font-medium text-blue-900 dark:text-blue-100">
-                      Using {message.toolName === 'Task' ? 'Subagent' : message.toolName}
+                      Using {(() => {
+                        switch(message.toolName) {
+                          case 'Task': return 'Subagent';
+                          case 'MultiEdit': return 'Multiple Edits';
+                          case 'Edit': return 'File Edit';
+                          case 'LS': return 'Directory Listing';
+                          case 'Read': return 'File Reader';
+                          case 'Write': return 'File Writer';
+                          case 'Bash': return 'Shell Command';
+                          case 'Grep': return 'Search';
+                          case 'Glob': return 'File Search';
+                          default: return message.toolName;
+                        }
+                      })()}
                     </span>
                     <span className="text-xs text-blue-600 dark:text-blue-400 font-mono">
                       {message.toolId}
@@ -237,7 +250,7 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                 {message.toolInput && message.toolName === 'Edit' && (() => {
                   try {
                     const input = JSON.parse(message.toolInput);
-                    if (input.file_path && input.old_string && input.new_string) {
+                    if (input.file_path && input.old_string !== undefined && input.new_string !== undefined) {
                       return (
                         <details className="mt-2" open={autoExpandTools}>
                           <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
@@ -525,47 +538,627 @@ const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFile
                     }
                   }
                   
-                  // Special handling for Task tool (subagent calls)
-                  if (message.toolName === 'Task') {
+                  // Special handling for Edit tool
+                  if (message.toolName === 'Edit') {
                     try {
                       const input = JSON.parse(message.toolInput);
-                      if (input.subagent_type && input.description && input.prompt) {
+                      if (input.file_path) {
                         return (
                           <details className="mt-2" open={autoExpandTools}>
                             <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
                               <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                               </svg>
-                              🤖 Launching Subagent: {input.subagent_type.replace(/-/g, ' ')}
+                              ✏️ Editing: {input.file_path.split('/').pop()}
                             </summary>
-                            <div className="mt-2 space-y-3">
-                              <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                                    {input.subagent_type.replace(/-/g, ' ')}
-                                  </span>
-                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-300 text-xs rounded-full">
-                                    Subagent
-                                  </span>
+                            <div className="mt-3 space-y-3">
+                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">File Path:</div>
+                                <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                  {input.file_path}
                                 </div>
-                                <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
-                                  {input.description}
-                                </p>
+                                {input.replace_all && (
+                                  <div className="mt-2 text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                                    ⚠️ Replace All Occurrences
+                                  </div>
+                                )}
                               </div>
-                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded border">
-                                <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase tracking-wide">
-                                  Task Instructions
+                              {input.old_string !== undefined && (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-red-600 dark:text-red-400 font-semibold">- Remove:</div>
+                                  <pre className="text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800 overflow-x-auto whitespace-pre-wrap">
+                                    {input.old_string === '' ? '(empty)' : (
+                                      <>
+                                        {input.old_string.substring(0, 300)}
+                                        {input.old_string.length > 300 && '...'}
+                                      </>
+                                    )}
+                                  </pre>
                                 </div>
-                                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                                  {input.prompt}
+                              )}
+                              {input.new_string !== undefined && (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-green-600 dark:text-green-400 font-semibold">+ Add:</div>
+                                  <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800 overflow-x-auto whitespace-pre-wrap">
+                                    {input.new_string === '' ? '(empty)' : (
+                                      <>
+                                        {input.new_string.substring(0, 300)}
+                                        {input.new_string.length > 300 && '...'}
+                                      </>
+                                    )}
+                                  </pre>
                                 </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Edit input:', e);
+                    }
+                  }
+                  
+                  // Special handling for LS tool
+                  if (message.toolName === 'LS') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.path) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              📁 Listing directory: {input.path.split('/').pop() || '/'}
+                            </summary>
+                            <div className="mt-3 space-y-2">
+                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Directory Path:</div>
+                                <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                  {input.path}
+                                </div>
+                              </div>
+                              {input.ignore && input.ignore.length > 0 && (
+                                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+                                  <div className="text-xs text-yellow-700 dark:text-yellow-400 font-semibold mb-1">
+                                    Ignored Patterns:
+                                  </div>
+                                  <div className="text-xs font-mono text-yellow-800 dark:text-yellow-300">
+                                    {input.ignore.join(', ')}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse LS input:', e);
+                    }
+                  }
+                  
+                  // Special handling for Grep tool (Search)
+                  if (message.toolName === 'Grep') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.pattern) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              🔍 Search: "{input.pattern.substring(0, 30)}{input.pattern.length > 30 ? '...' : ''}"
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                  </svg>
+                                  <div className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase tracking-wide">
+                                    Search Pattern
+                                  </div>
+                                </div>
+                                <code className="text-sm bg-orange-100 dark:bg-orange-800 text-orange-900 dark:text-orange-100 px-2 py-1 rounded font-mono break-all">
+                                  {input.pattern}
+                                </code>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {input.path && (
+                                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Search In:</div>
+                                    <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                      {input.path}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {input.glob && (
+                                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">File Types:</div>
+                                    <div className="text-sm font-mono text-blue-800 dark:text-blue-200">
+                                      {input.glob}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {input.type && (
+                                  <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                                    <div className="text-xs text-green-600 dark:text-green-400 mb-1">File Type:</div>
+                                    <div className="text-sm font-mono text-green-800 dark:text-green-200">
+                                      {input.type}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {(input['-i'] || input['-n'] || input['-A'] || input['-B'] || input['-C'] || input.multiline || input.output_mode) && (
+                                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
+                                  <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold mb-1">Options:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {input['-i'] && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        Case insensitive
+                                      </span>
+                                    )}
+                                    {input['-n'] && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        Line numbers
+                                      </span>
+                                    )}
+                                    {input['-A'] && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        After: {input['-A']}
+                                      </span>
+                                    )}
+                                    {input['-B'] && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        Before: {input['-B']}
+                                      </span>
+                                    )}
+                                    {input['-C'] && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        Context: {input['-C']}
+                                      </span>
+                                    )}
+                                    {input.multiline && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        Multiline
+                                      </span>
+                                    )}
+                                    {input.output_mode && input.output_mode !== 'files_with_matches' && (
+                                      <span className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded">
+                                        {input.output_mode}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Grep input:', e);
+                    }
+                  }
+                  
+                  // Special handling for Read tool
+                  if (message.toolName === 'Read') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.file_path) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              📄 Reading: {input.file_path.split('/').pop()}
+                            </summary>
+                            <div className="mt-3 space-y-2">
+                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">File Path:</div>
+                                <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                  {input.file_path}
+                                </div>
+                              </div>
+                              {(input.offset || input.limit) && (
+                                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+                                  <div className="text-xs text-yellow-700 dark:text-yellow-400 font-semibold mb-1">
+                                    Partial Read:
+                                  </div>
+                                  <div className="text-xs text-yellow-800 dark:text-yellow-300">
+                                    {input.offset ? `Starting from line ${input.offset}` : 'From beginning'}
+                                    {input.limit ? `, reading ${input.limit} lines` : ', reading all lines'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Read input:', e);
+                    }
+                  }
+                  
+                  // Special handling for Write tool
+                  if (message.toolName === 'Write') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.file_path) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              ✍️ Writing: {input.file_path.split('/').pop()}
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">File Path:</div>
+                                <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                  {input.file_path}
+                                </div>
+                              </div>
+                              {input.content && (
+                                <div className="space-y-1">
+                                  <div className="text-xs text-green-600 dark:text-green-400 font-semibold">Content Preview:</div>
+                                  <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                    {input.content.substring(0, 500)}
+                                    {input.content.length > 500 && '...'}
+                                  </pre>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {input.content.length} characters, {input.content.split('\n').length} lines
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Write input:', e);
+                    }
+                  }
+                  
+                  // Special handling for Glob tool (File Search)
+                  if (message.toolName === 'Glob') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.pattern) {
+                        const formatPattern = (pattern) => {
+                          // Extract file extensions from pattern
+                          const extMatch = pattern.match(/\*\*\/\*\.?\{([^}]+)\}/);
+                          const singleExtMatch = pattern.match(/\*\.([a-zA-Z0-9]+)$/);
+                          
+                          if (extMatch) {
+                            return {
+                              type: 'extensions',
+                              extensions: extMatch[1].split(',').map(ext => ext.trim()),
+                              scope: pattern.startsWith('**/') ? 'recursive' : 'current'
+                            };
+                          } else if (singleExtMatch) {
+                            return {
+                              type: 'extension',
+                              extension: singleExtMatch[1],
+                              scope: pattern.startsWith('**/') ? 'recursive' : 'current'
+                            };
+                          } else {
+                            return {
+                              type: 'pattern',
+                              pattern: pattern
+                            };
+                          }
+                        };
+
+                        const patternInfo = formatPattern(input.pattern);
+                        
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              🔍 File search: {
+                                patternInfo.type === 'extensions' 
+                                  ? `${patternInfo.extensions.length} file types`
+                                  : patternInfo.type === 'extension'
+                                  ? `${patternInfo.extension} files`
+                                  : 'pattern match'
+                              }
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                  </svg>
+                                  <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                                    Search Pattern
+                                  </div>
+                                </div>
+                                
+                                {patternInfo.type === 'extensions' ? (
+                                  <div className="space-y-2">
+                                    <div className="text-sm text-purple-800 dark:text-purple-200">
+                                      Searching for <strong>{patternInfo.extensions.length}</strong> file types:
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {patternInfo.extensions.map((ext, idx) => (
+                                        <span key={idx} className="px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 text-xs rounded font-mono">
+                                          .{ext}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <div className="text-xs text-purple-600 dark:text-purple-400">
+                                      {patternInfo.scope === 'recursive' ? '🔄 Recursive search (all subdirectories)' : '📁 Current directory only'}
+                                    </div>
+                                  </div>
+                                ) : patternInfo.type === 'extension' ? (
+                                  <div className="space-y-2">
+                                    <div className="text-sm text-purple-800 dark:text-purple-200">
+                                      Searching for <strong>.{patternInfo.extension}</strong> files
+                                    </div>
+                                    <div className="text-xs text-purple-600 dark:text-purple-400">
+                                      {patternInfo.scope === 'recursive' ? '🔄 Recursive search (all subdirectories)' : '📁 Current directory only'}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <div className="text-sm text-purple-800 dark:text-purple-200">
+                                      Custom pattern:
+                                    </div>
+                                    <code className="text-xs bg-purple-100 dark:bg-purple-800 text-purple-900 dark:text-purple-100 px-2 py-1 rounded font-mono">
+                                      {patternInfo.pattern}
+                                    </code>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {input.path && (
+                                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Search Directory:</div>
+                                  <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                    {input.path}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
+                      console.error('Failed to parse Glob input:', e);
+                    }
+                  }
+                  
+                  // Special handling for MultiEdit tool
+                  if (message.toolName === 'MultiEdit') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.file_path && input.edits && Array.isArray(input.edits)) {
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              ✏️ Multiple edits to: {input.file_path.split('/').pop()}
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">File Path:</div>
+                                <div className="text-sm font-mono text-gray-800 dark:text-gray-200 break-all">
+                                  {input.file_path}
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                  {input.edits.length} {input.edits.length === 1 ? 'Edit' : 'Edits'}:
+                                </div>
+                                {input.edits.map((edit, index) => (
+                                  <div key={index} className="border-l-4 border-blue-400 dark:border-blue-600 pl-3 space-y-2">
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                                      Edit {index + 1} of {input.edits.length}
+                                      {edit.replace_all && <span className="ml-2 text-orange-600 dark:text-orange-400">(Replace All)</span>}
+                                    </div>
+                                    {edit.old_string !== undefined && (
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-red-600 dark:text-red-400 font-semibold">- Remove:</div>
+                                        <pre className="text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded border border-red-200 dark:border-red-800 overflow-x-auto whitespace-pre-wrap">
+                                          {edit.old_string === '' ? '(empty)' : (
+                                            <>
+                                              {edit.old_string.substring(0, 200)}
+                                              {edit.old_string.length > 200 && '...'}
+                                            </>
+                                          )}
+                                        </pre>
+                                      </div>
+                                    )}
+                                    {edit.new_string !== undefined && (
+                                      <div className="space-y-1">
+                                        <div className="text-xs text-green-600 dark:text-green-400 font-semibold">+ Add:</div>
+                                        <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-2 rounded border border-green-200 dark:border-green-800 overflow-x-auto whitespace-pre-wrap">
+                                          {edit.new_string === '' ? '(empty)' : (
+                                            <>
+                                              {edit.new_string.substring(0, 200)}
+                                              {edit.new_string.length > 200 && '...'}
+                                            </>
+                                          )}
+                                        </pre>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           </details>
                         );
                       }
                     } catch (e) {
+                      console.error('Failed to parse MultiEdit input:', e);
+                    }
+                  }
+                  
+                  // Special handling for Task tool (subagent calls)
+                  if (message.toolName === 'Task') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      if (input.subagent_type && input.description && input.prompt) {
+                        // Format the subagent type nicely
+                        const formatSubagentType = (type) => {
+                          return type.split('-').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                          ).join(' ');
+                        };
+                        
+                        // Extract key information from prompt if possible
+                        const extractKeyPoints = (prompt) => {
+                          const lines = prompt.split('\n').filter(line => line.trim());
+                          const keyPoints = [];
+                          
+                          // Look for numbered lists or bullet points
+                          lines.forEach(line => {
+                            if (/^\d+\.|^-|^•/.test(line.trim())) {
+                              keyPoints.push(line.trim());
+                            }
+                          });
+                          
+                          return keyPoints.length > 0 ? keyPoints : null;
+                        };
+                        
+                        const keyPoints = extractKeyPoints(input.prompt);
+                        
+                        return (
+                          <details className="mt-2" open={autoExpandTools}>
+                            <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                              <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                              🤖 {formatSubagentType(input.subagent_type)} Agent
+                            </summary>
+                            <div className="mt-3 space-y-3">
+                              {/* Agent Info Card */}
+                              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800 p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                      </svg>
+                                      <span className="text-base font-semibold text-indigo-900 dark:text-indigo-100">
+                                        {formatSubagentType(input.subagent_type)}
+                                      </span>
+                                      <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs rounded-full font-medium">
+                                        Specialized Agent
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-indigo-800 dark:text-indigo-200 font-medium">
+                                      {input.description}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Key Points if available */}
+                                {keyPoints && keyPoints.length > 0 && (
+                                  <div className="mt-3 pt-3 border-t border-indigo-200 dark:border-indigo-700">
+                                    <div className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-2 uppercase tracking-wide">
+                                      Key Tasks
+                                    </div>
+                                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                                      {keyPoints.slice(0, 5).map((point, idx) => (
+                                        <div key={idx} className="flex items-start gap-2">
+                                          <span className="text-indigo-500 dark:text-indigo-400 mt-0.5">•</span>
+                                          <span className="text-xs text-indigo-700 dark:text-indigo-300 flex-1">
+                                            {point.replace(/^\d+\.|^-|^•/, '').trim()}
+                                          </span>
+                                        </div>
+                                      ))}
+                                      {keyPoints.length > 5 && (
+                                        <div className="text-xs text-indigo-600 dark:text-indigo-400 italic">
+                                          ... and {keyPoints.length - 5} more tasks
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Full Instructions (collapsible) */}
+                              <details className="group">
+                                <summary className="cursor-pointer p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 group-open:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        View Full Instructions
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      {input.prompt.length} characters
+                                    </span>
+                                  </div>
+                                </summary>
+                                <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                                  <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+                                    {input.prompt}
+                                  </pre>
+                                </div>
+                              </details>
+                            </div>
+                          </details>
+                        );
+                      }
+                    } catch (e) {
                       console.error('Failed to parse Task input:', e);
+                    }
+                  }
+                  
+                  // Special handling for WebFetch tool
+                  if (message.toolName === 'WebFetch') {
+                    try {
+                      const input = JSON.parse(message.toolInput);
+                      return (
+                        <details className="mt-2" open={autoExpandTools}>
+                          <summary className="text-sm text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-2">
+                            <svg className="w-4 h-4 transition-transform details-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                            🌐 View fetch details
+                          </summary>
+                          <div className="mt-3 space-y-3">
+                            {/* URL */}
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                              <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">URL:</div>
+                              <a 
+                                href={input.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline break-all"
+                              >
+                                {input.url}
+                              </a>
+                            </div>
+                            
+                            {/* Prompt */}
+                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                              <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Analysis Prompt:</div>
+                              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                                {input.prompt}
+                              </div>
+                            </div>
+                          </div>
+                        </details>
+                      );
+                    } catch (e) {
+                      // Fall back to regular display
                     }
                   }
                   
