@@ -30,6 +30,125 @@ class UsageAnalyzer {
     }
   }
 
+  detectUserPlan(serviceTier) {
+    // Plan limits definition based on the documentation
+    const PLAN_LIMITS = {
+      'free': {
+        name: 'Free Plan',
+        estimatedMessagesPerSession: null,
+        monthlyPrice: 0,
+        hasSessionLimits: false,
+        description: 'Daily usage limits apply',
+        resetHours: null
+      },
+      'standard': {
+        name: 'Pro Plan',
+        estimatedMessagesPerSession: 45,
+        monthlyPrice: 20,
+        hasSessionLimits: true,
+        description: 'Usage based on message complexity. Limits reset every 5 hours.',
+        resetHours: 5
+      },
+      'max': {
+        name: 'Max Plan (5x)',
+        estimatedMessagesPerSession: null,
+        monthlyPrice: 100,
+        hasSessionLimits: true,
+        description: '5x the usage of Pro plan. Complexity-based limits.',
+        resetHours: 5,
+        multiplier: 5
+      },
+      'premium': {
+        name: 'Max Plan (20x)',
+        estimatedMessagesPerSession: null,
+        monthlyPrice: 200,
+        hasSessionLimits: true,
+        description: '20x the usage of Pro plan. Complexity-based limits.',
+        resetHours: 5,
+        multiplier: 20
+      }
+    };
+    
+    // Service Tier to plan mapping
+    const planMapping = {
+      'free': 'free',
+      'standard': 'standard',
+      'premium': 'premium',
+      'max': 'max'
+    };
+    
+    const detectedTier = serviceTier || 'premium'; // Default to premium if not detected
+    const planType = planMapping[detectedTier] || 'premium';
+    
+    return {
+      tier: detectedTier,
+      planType: planType,
+      planDetails: PLAN_LIMITS[planType]
+    };
+  }
+
+  calculateSessionTimeRemaining() {
+    const now = new Date();
+    const localHour = now.getHours();
+    
+    // Session reset times: 1 AM, 7 AM, 1 PM, 7 PM (local time)
+    const resetHours = [1, 7, 13, 19];
+    
+    // Find next reset time
+    let nextReset = null;
+    for (const hour of resetHours) {
+      if (hour > localHour) {
+        nextReset = new Date(now);
+        nextReset.setHours(hour, 0, 0, 0);
+        break;
+      }
+    }
+    
+    // If no reset found today, use first reset tomorrow
+    if (!nextReset) {
+      nextReset = new Date(now);
+      nextReset.setDate(nextReset.getDate() + 1);
+      nextReset.setHours(resetHours[0], 0, 0, 0);
+    }
+    
+    // Find previous reset time
+    let previousReset = null;
+    for (let i = resetHours.length - 1; i >= 0; i--) {
+      if (resetHours[i] <= localHour) {
+        previousReset = new Date(now);
+        previousReset.setHours(resetHours[i], 0, 0, 0);
+        break;
+      }
+    }
+    
+    // If no previous reset today, use last reset yesterday
+    if (!previousReset) {
+      previousReset = new Date(now);
+      previousReset.setDate(previousReset.getDate() - 1);
+      previousReset.setHours(resetHours[resetHours.length - 1], 0, 0, 0);
+    }
+    
+    // Calculate time remaining and elapsed
+    const msRemaining = nextReset - now;
+    const msElapsed = now - previousReset;
+    const msTotal = nextReset - previousReset;
+    
+    const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+    const minutesRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    const percentageElapsed = (msElapsed / msTotal) * 100;
+    const percentageRemaining = (msRemaining / msTotal) * 100;
+    
+    return {
+      nextReset: nextReset.toISOString(),
+      previousReset: previousReset.toISOString(),
+      hoursRemaining,
+      minutesRemaining,
+      percentageElapsed,
+      percentageRemaining,
+      formattedRemaining: `${hoursRemaining}h ${minutesRemaining}m`
+    };
+  }
+
   async getPricing() {
     const now = Date.now();
     
@@ -288,6 +407,9 @@ class UsageAnalyzer {
             const cacheCreationTokens = usage.cache_creation_input_tokens || 0;
             const cacheReadTokens = usage.cache_read_input_tokens || 0;
             
+            // Extract service tier for plan detection
+            const serviceTier = usage.service_tier || null;
+            
             // Create unique hash to avoid duplicates using message ID and request ID
             // This matches ccusage's deduplication logic exactly
             const messageId = message.id;
@@ -381,6 +503,19 @@ class UsageAnalyzer {
             usageStats.models[model].cost += cost;
             usageStats.models[model].sessions += 1;
             
+            // Track service tier for plan detection
+            if (serviceTier && !usageStats.serviceTiers) {
+              usageStats.serviceTiers = new Set();
+            }
+            if (serviceTier) {
+              usageStats.serviceTiers.add(serviceTier);
+              // Keep track of the latest service tier
+              if (!usageStats.latestServiceTier || timestamp > usageStats.latestServiceTierTime) {
+                usageStats.latestServiceTier = serviceTier;
+                usageStats.latestServiceTierTime = timestamp;
+              }
+            }
+            
             // Update totals
             usageStats.totalInputTokens += inputTokens;
             usageStats.totalOutputTokens += outputTokens;
@@ -412,6 +547,12 @@ class UsageAnalyzer {
       }
     } catch (error) {
       console.error('Error analyzing usage:', error);
+    }
+    
+    // Process service tiers for plan detection
+    if (usageStats.serviceTiers) {
+      usageStats.serviceTiers = Array.from(usageStats.serviceTiers);
+      usageStats.detectedPlan = this.detectUserPlan(usageStats.latestServiceTier);
     }
     
     return usageStats;

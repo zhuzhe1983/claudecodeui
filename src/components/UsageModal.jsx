@@ -413,6 +413,8 @@ const UsageModal = ({ isOpen, onClose, settings }) => {
   const renderBillingView = () => {
     const billing = usageData?.billing || {};
     const credentials = usageData?.credentials || {};
+    const sessionTime = usageData?.sessionTime || {};
+    const detectedPlan = usageData?.detectedPlan || {};
     
     // Calculate token expiry
     const tokenExpiresAt = credentials.tokenExpiresAt ? new Date(credentials.tokenExpiresAt) : null;
@@ -437,14 +439,35 @@ const UsageModal = ({ isOpen, onClose, settings }) => {
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                   {t('usage.plan')}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
-                    Claude {credentials.subscriptionType || 'Unknown'}
-                  </span>
-                  {credentials.subscriptionType === 'max' && (
-                    <span className="px-2 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs rounded-full">
-                      $200/month
-                    </span>
+                <div className="flex flex-col gap-2">
+                  {/* Detected Plan from Usage */}
+                  {detectedPlan.planDetails && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                        {detectedPlan.planDetails.name}
+                      </span>
+                      <span className="px-2 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs rounded-full">
+                        ${detectedPlan.planDetails.monthlyPrice}/month
+                      </span>
+                    </div>
+                  )}
+                  {/* Credentials Plan (fallback) */}
+                  {!detectedPlan.planDetails && credentials.subscriptionType && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
+                        Claude {credentials.subscriptionType}
+                      </span>
+                      {credentials.subscriptionType === 'max' && (
+                        <span className="px-2 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs rounded-full">
+                          $200/month
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {detectedPlan.planDetails?.description && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {detectedPlan.planDetails.description}
+                    </div>
                   )}
                 </div>
               </div>
@@ -542,6 +565,39 @@ const UsageModal = ({ isOpen, onClose, settings }) => {
             </div>
           </div>
         </div>
+
+        {/* Session Time Section */}
+        {sessionTime.formattedRemaining && (
+          <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                {t('usage.sessionTime')}
+              </h4>
+              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                {sessionTime.formattedRemaining} {t('usage.remaining')}
+              </span>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-2">
+              <div 
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all"
+                style={{ width: `${sessionTime.percentageElapsed || 0}%` }}
+              />
+            </div>
+            
+            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+              <span>{t('usage.sessionUsed')}: {Math.round(sessionTime.percentageElapsed || 0)}%</span>
+              <span>{t('usage.resetIn')}: {sessionTime.formattedRemaining}</span>
+            </div>
+            
+            {sessionTime.nextReset && (
+              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {t('usage.nextReset')}: {new Date(sessionTime.nextReset).toLocaleTimeString()}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Subscription Info */}
         <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">

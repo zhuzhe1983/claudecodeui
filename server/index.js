@@ -770,7 +770,7 @@ app.get('/api/usage/detailed', authenticateToken, async (req, res) => {
     const { tab, range, project } = req.query;
     const detailed = await usageAnalyzer.getDetailed(tab, range, project);
     
-    // Add credentials information for billing tab
+    // Add credentials and session time information for billing tab
     if (tab === 'billing') {
       const credentials = await usageAnalyzer.getCredentials();
       if (credentials?.claudeAiOauth) {
@@ -779,6 +779,18 @@ app.get('/api/usage/detailed', authenticateToken, async (req, res) => {
           tokenExpiresAt: credentials.claudeAiOauth.expiresAt,
           scopes: credentials.claudeAiOauth.scopes
         };
+      }
+      
+      // Add session time remaining
+      detailed.sessionTime = usageAnalyzer.calculateSessionTimeRemaining();
+      
+      // Add detected plan from usage logs
+      const usage = await usageAnalyzer.analyzeUsage({
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        endDate: new Date()
+      });
+      if (usage.detectedPlan) {
+        detailed.detectedPlan = usage.detectedPlan;
       }
     }
     
