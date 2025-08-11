@@ -547,7 +547,7 @@ function Sidebar({
                 disabled={creatingProject}
                 className="h-8 text-xs hover:bg-accent transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </Button>
             </div>
           </div>
@@ -561,7 +561,7 @@ function Sidebar({
                     <FolderPlus className="w-3 h-3 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold text-foreground">New Project</h2>
+                    <h2 className="text-base font-semibold text-foreground">{t('newProject')}</h2>
                   </div>
                 </div>
                 <button
@@ -593,7 +593,7 @@ function Sidebar({
                     variant="outline"
                     className="flex-1 h-9 text-sm rounded-md active:scale-95 transition-transform"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     onClick={createNewProject}
@@ -1025,7 +1025,7 @@ function Sidebar({
                         ))
                       ) : getAllSessions(project).length === 0 && !loadingSessions[project.name] ? (
                         <div className="py-2 px-3 text-left">
-                          <p className="text-xs text-muted-foreground">No sessions yet</p>
+                          <p className="text-xs text-muted-foreground">{t('noSessionsYet')}</p>
                         </div>
                       ) : (
                         getAllSessions(project).map((session) => {
@@ -1071,7 +1071,7 @@ function Sidebar({
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <div className="text-xs font-medium truncate text-foreground">
-                                      {session.summary || 'New Session'}
+                                      {session.summary || t('newSession')}
                                     </div>
                                     <div className="flex items-center gap-1 mt-0.5">
                                       <Clock className="w-2.5 h-2.5 text-muted-foreground" />
@@ -1115,7 +1115,7 @@ function Sidebar({
                                   <MessageSquare className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
                                   <div className="min-w-0 flex-1">
                                     <div className="text-xs font-medium truncate text-foreground">
-                                      {session.summary || 'New Session'}
+                                      {session.summary || t('newSession')}
                                     </div>
                                     <div className="flex items-center gap-1 mt-0.5">
                                       <Clock className="w-2.5 h-2.5 text-muted-foreground" />
@@ -1198,7 +1198,7 @@ function Sidebar({
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setEditingSession(session.id);
-                                        setEditingSessionName(session.summary || 'New Session');
+                                        setEditingSessionName(session.summary || t('newSession'));
                                       }}
                                       title={t('manuallyEditSession')}
                                     >
@@ -1349,7 +1349,7 @@ function Sidebar({
             title={t('refreshProjectsSessions')}
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''} group-hover:rotate-180 transition-transform duration-300`} />
-            {!isCollapsed && <span className="ml-2 text-xs">Refresh</span>}
+            {!isCollapsed && <span className="ml-2 text-xs">{t('refresh')}</span>}
           </Button>
           <Button
             variant="ghost"
@@ -1394,7 +1394,7 @@ function Sidebar({
             <div className="w-10 h-10 rounded-2xl bg-background/80 flex items-center justify-center">
               <Settings className="w-5 h-5 text-muted-foreground" />
             </div>
-            <span className="text-lg font-medium text-foreground">Settings</span>
+            <span className="text-lg font-medium text-foreground">{t('settings')}</span>
           </button>
         </div>
         
@@ -1409,7 +1409,7 @@ function Sidebar({
             title={t('toolsSettings')}
           >
             <Settings className="w-3 h-3" />
-            {!isCollapsed && <span className="text-xs">Settings</span>}
+            {!isCollapsed && <span className="text-xs">{t('settings')}</span>}
           </Button>
         </div>
       </div>

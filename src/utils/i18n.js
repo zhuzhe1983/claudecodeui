@@ -374,6 +374,9 @@ const translations = {
     noMatchingProjects: 'No matching projects',
     creating: 'Creating...',
     createProject: 'Create Project',
+    newProject: 'New Project',
+    noSessionsYet: 'No sessions yet',
+    newSession: 'New Session',
     updateAvailable: 'Update Available',
     versionReady: 'Version {version} is ready',
     
@@ -789,6 +792,9 @@ const translations = {
     noMatchingProjects: '没有匹配的项目',
     creating: '创建中...',
     createProject: '创建项目',
+    newProject: '新建项目',
+    noSessionsYet: '还没有会话',
+    newSession: '新会话',
     updateAvailable: '有可用更新',
     versionReady: '版本 {version} 已就绪',
     
